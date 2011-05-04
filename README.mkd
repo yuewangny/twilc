@@ -1,6 +1,7 @@
 clit
 ====
 clit is a CLI(command line) twitter client based on NCurses Library.
+
 Features
 -----
 * view timelines by moving around with hjkl
@@ -8,6 +9,7 @@ Features
 * reply to a tweet (todo)
 * retweet (todo)
 * view conversation (todo)
+
 Dependencies
 ------------
 * liboauth
