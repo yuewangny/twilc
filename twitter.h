@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "filter.h"
+#include "config.h"
 
 #define MAX_FILTERS_PER_STATUS 20
 typedef struct {
@@ -37,7 +38,7 @@ typedef struct{
     int count;
 } statuses;
 
-#define TIMELINE_COUNT 2 //0 for home, 1 for mention
+#define TIMELINE_COUNT 1 //0 for home, 1 for mention
 
 statuses *timelines[TIMELINE_COUNT];
 status *current_status[TIMELINE_COUNT];
@@ -45,5 +46,13 @@ status *current_top_status[TIMELINE_COUNT];
 status *current_bottom_status[TIMELINE_COUNT];
 
 int current_tl_index;
+
+int authorize(clit_config *config);
+int load_timeline(char *tmpfile, statuses *tl);
+void filter_status_text(status *s);
+
+int init_timelines();
+int destroy_timeline(statuses *tl);
+int destroy_status(status *s);
 
 #endif

@@ -15,5 +15,6 @@ typedef struct filter{
 display_filter *filters[FILTER_NUM];
 
 void create_filters();
+void destroy_filters();
 
 #endif
