@@ -1,0 +1,17 @@
+clit
+====
+clit is a CLI(command line) twitter client based on NCurses Library.
+Intro
+-----
+You can
+* view timelines by moving around with hjkl
+* send a new tweet (todo)
+* reply to a tweet (todo)
+* retweet (todo)
+* view conversation (todo)
+Dependencies
+------------
+* liboauth
+* libxml2
+* ncurses
+
