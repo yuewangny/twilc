@@ -1,9 +1,8 @@
 clit
 ====
 clit is a CLI(command line) twitter client based on NCurses Library.
-Intro
+Features
 -----
-You can
 * view timelines by moving around with hjkl
 * send a new tweet (todo)
 * reply to a tweet (todo)
