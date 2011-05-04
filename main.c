@@ -12,29 +12,95 @@
 #include "twiparse.h"
 #include "ui.h"
 
+int move_next_page(WINDOW *win, status *page_start, int direction){
+    if(!page_start)
+        return -1;
+
+    status *top = 0;
+    status *bottom = 0;
+    int y,x;
+
+    getmaxyx(win,y,x);
+    if(direction > 0){
+        top = page_start;
+    }
+    else{
+        status *p = page_start;
+        int topy = y;
+        while(p){
+            topy -= p->y_max - p->y_min + 1;
+            if(topy <= 0)
+                break;
+            p = p->prev;
+        }
+        if(!p)
+            p = timelines[current_tl_index]->head;
+        else
+            p = p->next;
+        top = p;
+    }
+    wclear(win);
+    bottom = show_timeline(win,top,y,x);
+
+    current_top_status[current_tl_index] = top;
+    current_bottom_status[current_tl_index] = bottom;
+    return 0;
+}
+
+void move_next(WINDOW *win, status *current, int direction){
+    if(!current)
+        return;
+
+    status *next = 0;
+    status *boundary = 0;
+    if(direction > 0){
+        next = current->next;
+        boundary = current_bottom_status[current_tl_index];
+    }
+    else{
+        next = current->prev;
+        boundary = current_top_status[current_tl_index];
+    }
+    if(!next)
+        return;
+
+    if(current != boundary){
+        wmove(win,current->y_min,0);
+        show_status(win,current);
+    }
+    else
+        move_next_page(win,current,direction);
+
+    highlight_status(win,next);
+    current_status[current_tl_index] = next;
+}
 
 void wait_command(WINDOW *win){
     char ch = '\0';
-    status *current;
     while((ch = getch()) != 'q'){
         switch(ch){
             case 'n':
                 // Compose new tweet
                 break;
+            case 'h':
+                // move down one page
+                move_next_page(win,current_bottom_status[current_tl_index],1);
+                current_status[current_tl_index] = current_top_status[current_tl_index];
+                highlight_status(win, current_status[current_tl_index]);
+                break;
+            case 'l':
+                // move up one page
+                move_next_page(win,current_top_status[current_tl_index],-1);
+                current_status[current_tl_index] = current_top_status[current_tl_index];
+                highlight_status(win, current_status[current_tl_index]);
+                break;
             case 'j':
                 // move down one tweet
-                current = current_status[current_tl_index];
-                if(current && current->next 
-                        && current != current_bottom_status[current_tl_index]
-                        ){
-                    wmove(win,current->y_min,0);
-                    show_status(win,current);
-                    current_status[current_tl_index] = current->next;
-                    highlight_status(win,current_status[current_tl_index]);
-                }
+                move_next(win, current_status[current_tl_index],1);
                 break;
             case 'k':
                 // move up one tweet
+                move_next(win, current_status[current_tl_index],-1);
                 break;
         }
     }
@@ -62,6 +128,7 @@ int main(){
 
     setlocale(LC_ALL,"");
     initscr();
+    curs_set(0);
 
     int height,width;
     getmaxyx(stdscr,height,width);
