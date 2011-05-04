@@ -22,7 +22,7 @@ int parse_statuses(xmlDocPtr *doc,xmlNode *node, statuses *tl){
         if(node->type == XML_ELEMENT_NODE && strcmp(node->name,"status")==0){
             xmlNode *attr = node->children;
 
-            status *st = malloc(sizeof(status));
+            status *st = newstatus();
             st->next = NULL;
             nr_statuses ++;
             if(nr_statuses == 1)

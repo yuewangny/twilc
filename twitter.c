@@ -13,6 +13,16 @@
 #define TWEET_STATE_DELETED 0
 #define TWEET_TO_LOAD 0
 
+status *newstatus(){
+    status *s = malloc(sizeof(status));
+    s->id = 0;
+    s->composer.id = 0;
+    s->composer.screen_name = 0;
+    s->prev = 0;
+    s->next = 0;
+    return s;
+}
+
 int init_timelines(){
     for(int i = 0; i < TIMELINE_COUNT; ++i){
         timelines[i] = malloc(sizeof(statuses));
@@ -36,8 +46,9 @@ int init_timelines(){
 int destroy_timeline(statuses *tl){
     status *p = tl->head;
     while(p){
-        destroy_status(p);
+        status *tmp = p;
         p = p->next;
+        destroy_status(tmp);
     }
     free(tl);
     return 0;
@@ -49,8 +60,8 @@ int destroy_status(status *s){
         return 0;
     if(s->id){
         free(s->id);
-        free(s->composer.id);
-        free(s->composer.screen_name);
+        if(s->composer.id)free(s->composer.id);
+        if(s->composer.screen_name)free(s->composer.screen_name);
         for(int i=0;i<s->filter_count;i++)
             free(s->filtered_text[i]);
     }

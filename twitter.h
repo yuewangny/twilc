@@ -51,6 +51,7 @@ int authorize(clit_config *config);
 int load_timeline(char *tmpfile, statuses *tl);
 void filter_status_text(status *s);
 
+status *newstatus();
 int init_timelines();
 int destroy_timeline(statuses *tl);
 int destroy_status(status *s);
