@@ -73,7 +73,7 @@ char *parse_value(char *line){
 int parse_config(clit_config *config){
     FILE *fp = fopen(get_config_path(),"r");
     if(!fp){
-        fprintf(stderr,"Error:cannot open config file!\n");
+        //fprintf(stderr,"Error:cannot open config file!\n");
         return -1;
     }
     if(config == NULL)

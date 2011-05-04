@@ -81,7 +81,7 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
     rv = NULL;
     rc = oauth_split_url_parameters(reply, &rv);
     qsort(rv, rc, sizeof(char *), oauth_cmpstringp);
-    //printf("%d parameters:%s,%s,%s,%s\n",rc,rv[0],rv[1],rv[2],rv[3]);
+    printf("%d parameters:%s,%s,%s,%s\n",rc,rv[0],rv[1],rv[2],rv[3]);
 
     if(rc !=4 || strncmp(rv[0],"oauth_token=",11) || strncmp(rv[1],"oauth_token_secret=",18) || strncmp(rv[2],"screen_name=",11) || strncmp(rv[3],"user_id=",7)){
         free(rv);

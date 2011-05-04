@@ -198,7 +198,7 @@ int load_timeline(char *tmpfile, statuses *tl){
     toptweets->count = 0;
     parse_timeline(tmpfile,toptweets);
 
-    if(tl->count == 0){
+    if(tl->count == 0){ // No old tweets
         tl->head = toptweets->head;
         tl->count = toptweets->count;
         return tl->count;
@@ -306,7 +306,25 @@ int main(){
 
     // Reading User information
     clit_config *config = malloc(sizeof(clit_config));
-    parse_config(config);
+    if(parse_config(config) == -1){
+        char *access_token;
+        char *access_token_secret;
+        char *user_id;
+        char *screen_name;
+
+        if(oauth_authorize(&access_token,&access_token_secret,&user_id,&screen_name)){
+            printf("Authorization failed\n");
+            free(config);
+            exit(0);
+        }
+        else{
+            printf("access_token:%s\naccess_token_secret:%s\nscreen_name:%s\nuser_id:%s\n",access_token,access_token_secret,screen_name,user_id);
+            init_config(access_token,access_token_secret,user_id,screen_name,config);
+            save_config(config);
+            free(config);
+            exit(0);
+        }
+    }
     //printf("key:%s,secret:%s\n",config->key,config->secret);
     init_oauth(config->key,config->secret);
 
@@ -323,7 +341,7 @@ int main(){
     char *tmpfile = get_home();
     load_timeline(tmpfile,home);
     for(status *s = home->head; s; s = s->next){
-        //printf("%s\n",s->text);
+        printf("%s\n",s->text);
         filter_status_text(s);
     }
     current_status[0] = timelines[0]->head;
@@ -373,4 +391,3 @@ int main(){
 
     return 0;
 }
-
