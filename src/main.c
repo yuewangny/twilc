@@ -154,6 +154,7 @@ int main(){
 exit_clit:
     if(tlwin)
         delwin(tlwin);
+    curs_set(1);
     endwin(); 
     destroy_filters();
     for(int i = 0; i < TIMELINE_COUNT; ++i)
