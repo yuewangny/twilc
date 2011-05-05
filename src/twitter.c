@@ -33,17 +33,22 @@ status *newstatus(){
     return s;
 }
 
+statuses *newtimeline(){
+    statuses *tl = malloc(sizeof(statuses));
+    tl->head = 0;
+    tl->count = 0;
+}
+
 int init_timelines(){
     for(int i = 0; i < TIMELINE_COUNT; ++i){
-        timelines[i] = malloc(sizeof(statuses));
-        timelines[i]->count = 0;
+        timelines[i] = newtimeline();
     }
     statuses *home = timelines[0];
     char *tmpfile = get_home();
     load_timeline(tmpfile,home);
     remove(tmpfile);
     for(status *s = home->head; s; s = s->next){
-        printf("%s\n",s->text);
+        //printf("%s\n",s->text);
         filter_status_text(s);
     }
     current_status[0] = timelines[0]->head;
@@ -130,7 +135,7 @@ void filter_status_text(status *s){
             strncpy(filtered_text[i],prev,len);
             filtered_text[i][len] = '\0';
             filter_list[i] = 0;
-            printf("%s\n",filtered_text[i]);
+            //printf("%s\n",filtered_text[i]);
             i++;
         }
 
@@ -139,7 +144,7 @@ void filter_status_text(status *s){
         strncpy(filtered_text[i],begin,len);
         filtered_text[i][len] = '\0';
         filter_list[i] = current_filter;
-        printf("%s\n",filtered_text[i]);
+        //printf("%s\n",filtered_text[i]);
         i++;
 
         begin = NULL;
