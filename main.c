@@ -28,7 +28,7 @@ int move_next_page(WINDOW *win, status *page_start, int direction){
         status *p = page_start;
         int topy = y;
         while(p){
-            topy -= p->y_max - p->y_min + 1;
+            topy -= p->y_max - p->y_min + 2;
             if(topy <= 0)
                 break;
             p = p->prev;

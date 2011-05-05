@@ -54,7 +54,7 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
     if(!oauth_token || !oauth_token_secret)
         return 1;
     
-    printf("Please authorize:%s?oauth_token=%s\n",AUTHORIZE_URL,oauth_token);
+    printf("Please authorize: %s?oauth_token=%s\n",AUTHORIZE_URL,oauth_token);
     oauth_verifier = (char *)malloc(8*sizeof(char));
     printf("Enter PIN code:");
     scanf("%s",oauth_verifier);
