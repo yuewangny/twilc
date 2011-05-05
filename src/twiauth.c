@@ -111,61 +111,54 @@ int init_oauth(char *key, char *secret){
     return 0;
 }
 
-char *http_get(char *url, char *param){
-    char *fullurl = malloc(strlen(url)+strlen(param)+2);
-    strcpy(fullurl,url);
-    strcat(fullurl,"?");
-    strcat(fullurl,param);
-
+char *http_get(char *url){
     FILE *fp = NULL;
     curl_global_init(CURL_GLOBAL_SSL);
     CURL *handle = curl_easy_init();
     if(handle){
-        curl_easy_setopt(handle,CURLOPT_URL,fullurl);
+        curl_easy_setopt(handle,CURLOPT_URL,url);
         fp = fopen(TEMP_FILE,"w+");
         if(!fp)
             fprintf(stderr,"Error opening tmp file!\n");
         else{
-            //printf("==============================\n");
             curl_easy_setopt(handle,CURLOPT_WRITEDATA,fp);
             CURLcode res = curl_easy_perform(handle);
             curl_easy_cleanup(handle);
             fclose(fp);
-            //printf("=======================================\n");
         }
     }
 
-    free(fullurl);
     return TEMP_FILE;
 }
 
 char *oauth_get(const char *api_base, kvpair *params, int nr_param){
-    char *arg;
-    char *fullarg;
-    char *req_url;
-    char *reply;
+    char *call_url = 0;
+    char *req_url = 0;
 
-    arg = NULL; 
-    req_url = oauth_sign_url2(api_base,&arg,OA_HMAC,"GET",CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
+    int len = strlen(api_base);
+    for(int i = 0; i < nr_param; i++)
+        len += strlen(params[i].key)+strlen(params[i].value)+2;
+    len ++;
+    call_url = (char *)malloc(len+1);
 
-    int arglen = strlen(arg);
-    int i;
-    for(i = 0; i < nr_param; i++)
-        arglen += strlen(params[i].key)+strlen(params[i].value+2);
-    arglen ++;
-    fullarg = (char *)malloc(arglen);
-    memset(fullarg,'\0',arglen);
-    strcpy(fullarg,arg);
-    for(i=0; i < nr_param; i++){
-        strcat(fullarg,"&");
-        strcat(fullarg,params[i].key);
-        strcat(fullarg,"=");
-        strcat(fullarg,params[i].value);
+    memset(call_url,'\0',len);
+    strcpy(call_url,api_base);
+    for(int i=0; i < nr_param; i++){
+        if(i == 0)
+            strcat(call_url,"?");
+        else
+            strcat(call_url,"&");
+        strcat(call_url,params[i].key);
+        strcat(call_url,"=");
+        strcat(call_url,params[i].value);
     }
-    //reply = oauth_http_get(req_url, fullarg);
-    char *fn = http_get(req_url,fullarg);
 
-    free(fullarg);
+    req_url = oauth_sign_url2(call_url ,NULL,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
+    //fprintf(stderr,"req_url:%s\n",req_url);
+    //char *fn = oauth_http_get(req_url, arg);
+    char *fn = http_get(req_url);
+
+    free(call_url);
     free(req_url);
 
     return fn;

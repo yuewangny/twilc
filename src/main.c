@@ -75,6 +75,7 @@ void move_next(WINDOW *win, status *current, int direction){
     current_status[current_tl_index] = next;
 }
 
+
 void wait_command(WINDOW *win){
     char ch = '\0';
     while((ch = getch()) != 'q'){
@@ -104,6 +105,7 @@ void wait_command(WINDOW *win){
                 break;
             case 'r':
                 // refresh the current timeline
+                update_timeline(current_tl_index,NULL,current_top_status[current_tl_index]);
                 break;
         }
     }

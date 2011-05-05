@@ -13,6 +13,9 @@
 #define GAP_STATUS_ID 0
 #define GAP_STATUS_TEXT "gap"
 
+#define DEFAUTL_REFRESH_COUNT "50"
+#define DEFAULT_LOAD_COUNT "200"
+
 status *newgapstatus(){
     status *s = newstatus();
     s->id = GAP_STATUS_ID;
@@ -37,6 +40,22 @@ statuses *newtimeline(){
     statuses *tl = malloc(sizeof(statuses));
     tl->head = 0;
     tl->count = 0;
+    return tl;
+}
+
+int update_timeline(int tl_index, status *from_status, status *to_status){
+    char *since_id = 0;
+    char *max_id = 0;
+
+    int count = DEFAUTL_REFRESH_COUNT;
+    if(from_status)
+        max_id = from_status->id;
+    if(to_status)
+        since_id = to_status->id;
+    char *tmpfile;
+    tmpfile = get_timeline(tl_index,since_id,max_id,DEFAUTL_REFRESH_COUNT);
+    load_timeline(tmpfile,timelines[current_tl_index],from_status,to_status);
+    remove(tmpfile);
 }
 
 int init_timelines(){
@@ -44,13 +63,9 @@ int init_timelines(){
         timelines[i] = newtimeline();
     }
     statuses *home = timelines[0];
-    char *tmpfile = get_home();
-    load_timeline(tmpfile,home);
+    char *tmpfile = get_timeline(TL_TYPE_HOME, NULL,NULL,DEFAULT_LOAD_COUNT);
+    load_timeline(tmpfile,home,NULL,NULL);
     remove(tmpfile);
-    for(status *s = home->head; s; s = s->next){
-        //printf("%s\n",s->text);
-        filter_status_text(s);
-    }
     current_status[0] = timelines[0]->head;
     current_top_status[0] = timelines[0]->head;
 
@@ -171,11 +186,14 @@ void filter_status_text(status *s){
 /*
  * Merge new tweets with current timeline.
  */
-int load_timeline(char *tmpfile, statuses *tl){
+int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_status){
     LIBXML_TEST_VERSION
     statuses *toptweets = malloc(sizeof(statuses));
     toptweets->count = 0;
     parse_timeline(tmpfile,toptweets);
+    for(status *s = toptweets->head; s; s = s->next){
+        filter_status_text(s);
+    }
 
     if(tl->count == 0){ // No old tweets
         tl->head = toptweets->head;
@@ -184,7 +202,11 @@ int load_timeline(char *tmpfile, statuses *tl){
     }
     else{
         status *top = toptweets->head;
-        status *oldtop = tl->head;
+        status *oldtop = 0;
+        if(to_status)
+            oldtop = tl->head;
+        else
+            oldtop = to_status;
         if(strcmp(top->id,oldtop->id) == 0)
             return 0;
 
@@ -224,7 +246,14 @@ int load_timeline(char *tmpfile, statuses *tl){
             free(prev);
         }
 
-        tl->head = toptweets->head;
+        if(from_status){
+            from_status->next = toptweets->head;
+            toptweets->head->prev = from_status;
+        }
+        else{
+            tl->head = toptweets->head;
+            tl->head->prev = NULL;
+        }
     }
 }
 

@@ -48,7 +48,8 @@ status *current_bottom_status[TIMELINE_COUNT];
 int current_tl_index;
 
 int authorize(clit_config *config);
-int load_timeline(char *tmpfile, statuses *tl);
+int update_timeline(int tl_index, status *from_status, status *to_status);
+int load_timeline(char *tmpfile, statuses *tl,status *from,status *to);
 void filter_status_text(status *s);
 
 status *newstatus();
