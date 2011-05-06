@@ -61,8 +61,13 @@ void move_next(WINDOW *win, status *current, int direction){
         next = current->prev;
         boundary = current_top_status[current_tl_index];
     }
-    if(!next)  // reached the bottom
+    if(!next){  // reached the bottom
+        if(direction > 0)
+            notify_state_change(STATE_REACHED_BOTTOM);
+        else
+            notify_state_change(STATE_REACHED_TOP);
         return;
+    }
 
     //fprintf(stderr,"Next: %s\n",next->text);
     if(current != boundary){
@@ -77,6 +82,39 @@ void move_next(WINDOW *win, status *current, int direction){
 }
 
 
+/**
+ * Commands:
+ * a -- 
+ * b -- 
+ * c -- conversation
+ * d -- delete a tweet
+ * e --
+ * f -- fav/unfav a tweet
+ * g --
+ * h -- 
+ * i --
+ * j -- move down one tweet
+ * J -- move down one page
+ * k -- move up one tweet
+ * K -- move up one page
+ * l -- list
+ * m -- direct message
+ * n -- compose a new tweet
+ * o --
+ * p --
+ * q -- quit
+ * r -- reply to a tweet
+ * s -- search
+ * t -- retweet
+ * u --
+ * v --
+ * w --
+ * x --
+ * y -- 
+ * z --
+ * ? -- show shortcuts help
+ * . -- refresh
+ */
 void wait_command(WINDOW *win){
     char ch = '\0';
     while((ch = getch()) != 'q'){
@@ -84,14 +122,14 @@ void wait_command(WINDOW *win){
             case 'n':
                 // Compose new tweet
                 break;
-            case 'h':
+            case 'J':
                 // move down one page
                 if(move_next_page(win,current_bottom_status[current_tl_index],1) != -1){
                     current_status[current_tl_index] = current_top_status[current_tl_index];
                     highlight_status(win, current_status[current_tl_index]);
                 }
                 break;
-            case 'l':
+            case 'K':
                 // move up one page
                 if(move_next_page(win,current_top_status[current_tl_index],-1)!= -1){
                     current_status[current_tl_index] = current_top_status[current_tl_index];
@@ -100,13 +138,15 @@ void wait_command(WINDOW *win){
                 break;
             case 'j':
                 // move down one tweet
+                notify_state_change(STATE_NORMAL);
                 move_next(win, current_status[current_tl_index],1);
                 break;
             case 'k':
                 // move up one tweet
+                notify_state_change(STATE_NORMAL);
                 move_next(win, current_status[current_tl_index],-1);
                 break;
-            case 'r':
+            case '.':
                 // refresh the current timeline
                 update_timeline(current_tl_index,NULL,current_top_status[current_tl_index]);
                 break;
@@ -136,12 +176,9 @@ int main(){
     initscr();
     curs_set(0);
 
-    int height,width;
-    getmaxyx(stdscr,height,width);
-    WINDOW *tlwin = newwin(height,width,0,0);
 
-    if(has_colors() == FALSE)
-        goto exit_clit;
+    //if(has_colors() == FALSE)
+        //goto exit_twilc;
     raw();
     keypad(stdscr,TRUE);
     noecho();
@@ -149,16 +186,15 @@ int main(){
 
     move(0,0);
     refresh();
-    current_bottom_status[current_tl_index] = show_timeline(tlwin,current_status[current_tl_index],height,width);
-    wrefresh(tlwin);
-    highlight_status(tlwin,current_status[current_tl_index]);
 
-    wait_command(tlwin);
+    if(init_ui() == -1)
+        goto exit_twilc;
+
+    wait_command(tl_win);
 
 
-exit_clit:
-    if(tlwin)
-        delwin(tlwin);
+exit_twilc:
+    destroy_ui();
     curs_set(1);
     endwin(); 
     destroy_filters();

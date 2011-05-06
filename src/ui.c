@@ -12,6 +12,99 @@
 #include "twiparse.h"
 #include "ui.h"
 
+char *titles[3] = {"Home","Mention","Profile"};
+char *states[4] = {"",
+                   "You've reached the top.",
+                   "You've reached the bottom.",
+                   "Timeline updated."};
+
+int draw_border(WINDOW *win, char c){
+    int height,width;
+    getmaxyx(win,height,width);
+
+    char border[width+1];
+    for(int i=0;i<width;i++)
+        border[i] = c;
+    border[width] = '\0';
+    waddstr(win,border);
+}
+
+int init_tl_win(){
+    wmove(tl_win,0,0);
+    int height,width;
+    getmaxyx(tl_win,height,width);
+    current_bottom_status[current_tl_index] = show_timeline(tl_win,current_status[current_tl_index],height,width);
+    wrefresh(tl_win);
+    highlight_status(tl_win,current_status[current_tl_index]);
+    return 0;
+}
+
+int init_title_win(){
+    wmove(title_win,0,0);
+    current_tl_index = 0;
+    char *title = titles[current_tl_index];
+
+    int height,width;
+    getmaxyx(title_win,height,width);
+    init_pair(6, COLOR_BLACK, COLOR_YELLOW);
+    wattron(title_win,COLOR_PAIR(6));
+//    wmove(title_win,0,(width-strlen(title))/2-1);
+    waddstr(title_win, titles[current_tl_index]);
+    waddch(title_win,'\n');
+    for(int i=0;i<width;i++)
+        waddch(title_win,' ');
+    wattroff(title_win,COLOR_PAIR(6));
+    wrefresh(title_win);
+    return 0;
+}
+
+int init_state_win(int which_state){
+    wmove(state_win,0,0);
+
+    int height,width;
+    getmaxyx(title_win,height,width);
+    init_pair(6, COLOR_BLACK, COLOR_YELLOW);
+    wattron(state_win,COLOR_PAIR(6));
+    for(int i=0;i<width;i++)
+        waddch(state_win,'-');
+    wattroff(state_win,COLOR_PAIR(6));
+    waddstr(state_win, states[which_state]);
+    wrefresh(state_win);
+    return 0;
+}
+
+int notify_state_change(int which_state){
+    wmove(state_win,1,0);
+    waddstr(state_win, states[which_state]);
+    wclrtoeol(state_win);
+    wrefresh(state_win);
+    return 0;
+}
+
+int init_ui(){
+    int height,width;
+    getmaxyx(stdscr,height,width);
+    title_win = newwin(2,width,0,0);
+    tl_win = newwin(height-4,width,2,0);
+    state_win = newwin(2,width,height-2,0);
+
+    if(!title_win || !tl_win || !state_win)
+        return -1;
+
+    init_title_win();
+    init_tl_win();
+    init_state_win(STATE_NORMAL);
+}
+
+int destroy_ui(){
+    if(title_win)
+        delwin(title_win);
+    if(tl_win)
+        delwin(tl_win);
+    if(state_win)
+        delwin(state_win);
+}
+
 WINDOW *create_newwin(int height, int width, int starty, int startx){
     WINDOW *local_win;
 
@@ -51,16 +144,6 @@ void filter_display(WINDOW *win, status *p){
         waddstr(win,p->text);
 }
 
-int draw_border(WINDOW *win){
-    int height,width;
-    getmaxyx(win,height,width);
-
-    char border[width+1];
-    for(int i=0;i<width;i++)
-        border[i] = '-';
-    border[width] = '\0';
-    waddstr(win,border);
-}
 
 int show_status(WINDOW *win,status *p){
     if(!p)
@@ -94,7 +177,7 @@ status *show_timeline(WINDOW *win, status *p,int height, int width){
 
         if(p->y_max >= height-3)
             break;
-        draw_border(win);
+        draw_border(win,'-');
         prev = p;
         p = p->next;
     }

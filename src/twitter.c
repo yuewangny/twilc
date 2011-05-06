@@ -75,6 +75,8 @@ int init_timelines(){
 }
 
 int destroy_timeline(statuses *tl){
+    if(!tl)
+        return 0;
     status *p = tl->head;
     while(p){
         status *tmp = p;
