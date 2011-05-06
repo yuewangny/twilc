@@ -16,6 +16,7 @@ AC_CHECK_LIB([ncursesw], [initscr])
 AC_CHECK_LIB([oauth], [oauth_sign_url2])
 AC_CHECK_LIB([xml2], [xmlDocGetRootElement])
 AC_CHECK_LIB([z], [gzread])
+AC_CHECK_LIB([curl],[curl_global_init])
 
 # Checks for header files.
 AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
