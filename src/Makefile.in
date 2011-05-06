@@ -32,7 +32,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = clit$(EXEEXT)
+bin_PROGRAMS = twilc$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -45,11 +45,11 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_clit_OBJECTS = twiauth.$(OBJEXT) twiaction.$(OBJEXT) \
+am_twilc_OBJECTS = twiauth.$(OBJEXT) twiaction.$(OBJEXT) \
 	twiparse.$(OBJEXT) config.$(OBJEXT) filter.$(OBJEXT) \
 	twitter.$(OBJEXT) ui.$(OBJEXT) main.$(OBJEXT)
-clit_OBJECTS = $(am_clit_OBJECTS)
-clit_DEPENDENCIES =
+twilc_OBJECTS = $(am_twilc_OBJECTS)
+twilc_DEPENDENCIES =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -58,8 +58,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(clit_SOURCES)
-DIST_SOURCES = $(clit_SOURCES)
+SOURCES = $(twilc_SOURCES)
+DIST_SOURCES = $(twilc_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -150,8 +150,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CXX_FLAGS = $(INIT_CFLAGS)
-clit_SOURCES = twiauth.c twiaction.c twiparse.c config.c filter.c twitter.c ui.c main.c
-clit_LDADD = $(INIT_LIBS)
+twilc_SOURCES = twiauth.c twiaction.c twiparse.c config.c filter.c twitter.c ui.c main.c
+twilc_LDADD = $(INIT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -223,9 +223,9 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-clit$(EXEEXT): $(clit_OBJECTS) $(clit_DEPENDENCIES) 
-	@rm -f clit$(EXEEXT)
-	$(LINK) $(clit_OBJECTS) $(clit_LDADD) $(LIBS)
+twilc$(EXEEXT): $(twilc_OBJECTS) $(twilc_DEPENDENCIES) 
+	@rm -f twilc$(EXEEXT)
+	$(LINK) $(twilc_OBJECTS) $(twilc_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

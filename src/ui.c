@@ -51,11 +51,20 @@ void filter_display(WINDOW *win, status *p){
         waddstr(win,p->text);
 }
 
-int show_status(WINDOW *win,status *p){
-    int y,x;
-    getyx(win,y,x);
-    p->y_min = y;
+int draw_border(WINDOW *win){
+    int height,width;
+    getmaxyx(win,height,width);
 
+    char border[width+1];
+    for(int i=0;i<width;i++)
+        border[i] = '-';
+    border[width] = '\0';
+    waddstr(win,border);
+}
+
+int show_status(WINDOW *win,status *p){
+    if(!p)
+        return -1;
     init_pair(5, COLOR_GREEN, COLOR_BLACK);
     wattron(win,COLOR_PAIR(5));
     waddstr(win,p->composer.screen_name);
@@ -63,35 +72,47 @@ int show_status(WINDOW *win,status *p){
     waddch(win,'\n');
 
     filter_display(win,p);
-
+    int y,x;
     getyx(win,y,x);
     p->y_max = y;
-
     waddch(win,'\n');
+
+    return 0;
 }
 
 status *show_timeline(WINDOW *win, status *p,int height, int width){ 
-    char border[width+1];
-    for(int i=0;i<width;i++)
-        border[i] = '-';
-    border[width] = '\0';
+    if(!p)
+        return 0;
 
+    int y,x;
     wmove(win,0,0);
+    status *prev = NULL;
     while(p){
+        getyx(win,y,x);
+        p->y_min = y;
         show_status(win,p);
-        waddstr(win,border);
+
         if(p->y_max >= height-3)
             break;
+        draw_border(win);
+        prev = p;
         p = p->next;
     }
-    return p;
+    if(p)
+        return p;
+    else
+        return prev;
 }
 
-void highlight_status(WINDOW *win, status *s){
+int highlight_status(WINDOW *win, status *s){
+    if(!s)
+        return -1;
     for(int line = s->y_min; line <= s->y_max; ++line){
         wmove(win,line,0);
         wchgat(win,-1,A_REVERSE,0,NULL);
     }
     wrefresh(win);
+
+    return 0;
 }
 

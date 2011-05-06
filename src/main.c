@@ -61,9 +61,10 @@ void move_next(WINDOW *win, status *current, int direction){
         next = current->prev;
         boundary = current_top_status[current_tl_index];
     }
-    if(!next)
+    if(!next)  // reached the bottom
         return;
 
+    //fprintf(stderr,"Next: %s\n",next->text);
     if(current != boundary){
         wmove(win,current->y_min,0);
         show_status(win,current);
@@ -85,15 +86,17 @@ void wait_command(WINDOW *win){
                 break;
             case 'h':
                 // move down one page
-                move_next_page(win,current_bottom_status[current_tl_index],1);
-                current_status[current_tl_index] = current_top_status[current_tl_index];
-                highlight_status(win, current_status[current_tl_index]);
+                if(move_next_page(win,current_bottom_status[current_tl_index],1) != -1){
+                    current_status[current_tl_index] = current_top_status[current_tl_index];
+                    highlight_status(win, current_status[current_tl_index]);
+                }
                 break;
             case 'l':
                 // move up one page
-                move_next_page(win,current_top_status[current_tl_index],-1);
-                current_status[current_tl_index] = current_top_status[current_tl_index];
-                highlight_status(win, current_status[current_tl_index]);
+                if(move_next_page(win,current_top_status[current_tl_index],-1)!= -1){
+                    current_status[current_tl_index] = current_top_status[current_tl_index];
+                    highlight_status(win, current_status[current_tl_index]);
+                }
                 break;
             case 'j':
                 // move down one tweet

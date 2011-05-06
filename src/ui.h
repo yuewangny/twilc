@@ -13,6 +13,6 @@ int show_status(WINDOW *win, status *s);
 
 status *show_timeline(WINDOW *win, status *s, int height, int width);
 
-void highlight_status(WINDOW *win, status *s);
+int highlight_status(WINDOW *win, status *s);
 
 #endif

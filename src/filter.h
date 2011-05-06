@@ -1,7 +1,7 @@
 #ifndef FILTER_H
 #define FILTER_H
 
-#define FILTER_NUM 3 
+#define FILTER_NUM 4 
 
 #include <ncurses.h>
 

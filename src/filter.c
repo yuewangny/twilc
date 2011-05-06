@@ -33,12 +33,9 @@ char *get_rt_end(char *begin){
 
 void before_rt(WINDOW *win){
     waddstr(win,"\n");
-    init_pair(2, COLOR_RED, COLOR_BLACK);
-    wattron(win,COLOR_PAIR(2));
 }
 
 void after_rt(WINDOW *win){
-    wattroff(win, COLOR_PAIR(2));
 }
 
 char *get_url_end(char *begin){
@@ -62,6 +59,26 @@ void after_url(WINDOW *win){
     wattroff(win,COLOR_PAIR(3));
 }
 
+char *get_tag_end(char *begin){
+    if((*begin) != '#')
+        return 0;
+
+    char *p = begin + 1;
+    int x = *p;
+    while(x != '\0' && ((x>='a' && x<='z')||(x>='A' && x<='Z') || (x >= '0' && x <= '9')|| x=='_'))
+        x = *(++p);
+    return p;
+}
+
+char *before_tag(WINDOW *win){
+    init_pair(2, COLOR_RED, COLOR_BLACK);
+    wattron(win,COLOR_PAIR(2));
+}
+
+char *after_tag(WINDOW *win){
+    wattroff(win, COLOR_PAIR(2));
+}
+
 void create_filters(){
     struct filter *mention_filter = malloc(sizeof(struct filter));
     mention_filter->pattern = "@";
@@ -83,6 +100,13 @@ void create_filters(){
     url_filter->before_filter = before_url;
     url_filter->after_filter = after_url;
     filters[2] = url_filter;
+
+    struct filter *tag_filter = malloc(sizeof(struct filter));
+    tag_filter->pattern = "#";
+    tag_filter->get_pattern_end = get_tag_end;
+    tag_filter->before_filter = before_tag;
+    tag_filter->after_filter = after_tag;
+    filters[3] = tag_filter;
 }
 
 void destroy_filters(){
