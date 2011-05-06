@@ -3649,6 +3649,8 @@ _ACEOF
 
   LIBS="-lm $LIBS"
 
+else
+  as_fn_error $? "libm not found" "$LINENO" 5
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for initscr in -lncursesw" >&5
@@ -3694,6 +3696,8 @@ _ACEOF
 
   LIBS="-lncursesw $LIBS"
 
+else
+  as_fn_error $? "ncursesw not found" "$LINENO" 5
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for oauth_sign_url2 in -loauth" >&5
@@ -3739,6 +3743,8 @@ _ACEOF
 
   LIBS="-loauth $LIBS"
 
+else
+  as_fn_error $? "liboauth not found" "$LINENO" 5
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlDocGetRootElement in -lxml2" >&5
@@ -3784,6 +3790,8 @@ _ACEOF
 
   LIBS="-lxml2 $LIBS"
 
+else
+  as_fn_error $? "libxml2 not found" "$LINENO" 5
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
@@ -3829,6 +3837,8 @@ _ACEOF
 
   LIBS="-lz $LIBS"
 
+else
+  as_fn_error $? "zlib not found" "$LINENO" 5
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for curl_global_init in -lcurl" >&5
@@ -3874,6 +3884,8 @@ _ACEOF
 
   LIBS="-lcurl $LIBS"
 
+else
+  as_fn_error $? "libcurl not found" "$LINENO" 5
 fi
 
 
