@@ -82,12 +82,15 @@ int parse_timeline(char *filename, statuses *tl){
     xmlNode *root_element = xmlDocGetRootElement(doc);
     if(root_element->type==XML_ELEMENT_NODE
         && strcmp(root_element->name,"statuses")==0){
-        parse_statuses(&doc,root_element->children, tl);
+        if(parse_statuses(&doc,root_element->children, tl) < 0)
+            result = -1;
     }
     else result = -1;
 
     xmlFreeDoc(doc);
     xmlCleanupParser();
+
+    return result;
 }
 
 /*

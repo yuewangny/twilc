@@ -13,10 +13,13 @@
 #include "ui.h"
 
 char *titles[3] = {"Home","Mention","Profile"};
-char *states[4] = {"",
-                   "You've reached the top.",
-                   "You've reached the bottom.",
-                   "Timeline updated."};
+const char *states[NR_STATES] = {"",
+          "You've reached the top.",
+          "You've reached the bottom.",
+          "Retrieving timeline updates...",
+          "Timeline updated.",
+          "Failed to retrieve updates.",
+          "Loading timeline updates..."};
 
 int draw_border(WINDOW *win, char c){
     int height,width;
@@ -73,9 +76,9 @@ int init_state_win(int which_state){
     return 0;
 }
 
-int notify_state_change(int which_state){
+int notify_state_change(const char *state_str){
     wmove(state_win,1,0);
-    waddstr(state_win, states[which_state]);
+    waddstr(state_win, state_str);
     wclrtoeol(state_win);
     wrefresh(state_win);
     return 0;
@@ -181,6 +184,7 @@ status *show_timeline(WINDOW *win, status *p,int height, int width){
         prev = p;
         p = p->next;
     }
+    wrefresh(win);
     if(p)
         return p;
     else

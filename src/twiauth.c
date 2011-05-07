@@ -30,18 +30,14 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
     char *postarg_verified = NULL;
 
     req_url = oauth_sign_url2(REQUEST_TOKEN_URL, &postarg, OA_HMAC, NULL, CONSUMER_KEY, CONSUMER_SECRET, NULL, NULL);
-    //printf("request URL:%s\n",req_url);
     reply = oauth_http_post(req_url, postarg);
     if(req_url) free(req_url);
     if(postarg) free(postarg);
     if(!reply)
         return 1;
-    //else
-        //printf("http-reply:%s\n",reply);
 
     rc = oauth_split_url_parameters(reply, &rv);
     qsort(rv, rc, sizeof(char *), oauth_cmpstringp);
-    //printf("%d parameters:%s,%s,%s\n",rc,rv[0],rv[1],rv[2]);
     if(rc != 3 || strncmp(rv[0],"oauth_callback_confirmed=true",29) || strncmp(rv[1], "oauth_token=",11) || strncmp(rv[2],"oauth_token_secret=",18)){
         free(rv);
         return 1;
@@ -67,15 +63,11 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
     req_url = oauth_sign_url2(ACCESS_TOKEN_URL,&postarg,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,oauth_token,oauth_token_secret);
     postarg_verified = (char *)malloc((strlen(postarg)+24)*sizeof(char));
     sprintf(postarg_verified,"%s&oauth_verifier=%s", postarg,oauth_verifier);
-    //printf("request URL:%s\n",postarg_verified);
     reply = oauth_http_post(req_url, postarg_verified);
 
     free(req_url);
     free(postarg);
-    if(reply)
-        //oauth_token;oauth_token_secret;user_id;screen_name
-        printf("reply:%s\n",reply);
-    else
+    if(!reply)
         return 1;
 
     rv = NULL;
@@ -119,7 +111,7 @@ char *http_get(char *url){
         curl_easy_setopt(handle,CURLOPT_URL,url);
         fp = fopen(TEMP_FILE,"w+");
         if(!fp)
-            fprintf(stderr,"Error opening tmp file!\n");
+            return NULL;
         else{
             curl_easy_setopt(handle,CURLOPT_WRITEDATA,fp);
             CURLcode res = curl_easy_perform(handle);
@@ -154,7 +146,6 @@ char *oauth_get(const char *api_base, kvpair *params, int nr_param){
     }
 
     req_url = oauth_sign_url2(call_url ,NULL,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
-    //fprintf(stderr,"req_url:%s\n",req_url);
     //char *fn = oauth_http_get(req_url, arg);
     char *fn = http_get(req_url);
 

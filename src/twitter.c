@@ -9,6 +9,7 @@
 #include "filter.h"
 #include "twiparse.h"
 #include "twiaction.h"
+#include "ui.h"
 
 #define GAP_STATUS_ID 0
 #define GAP_STATUS_TEXT "gap"
@@ -47,15 +48,21 @@ int update_timeline(int tl_index, status *from_status, status *to_status){
     char *since_id = 0;
     char *max_id = 0;
 
-    int count = DEFAUTL_REFRESH_COUNT;
     if(from_status)
         max_id = from_status->id;
-    if(to_status)
-        since_id = to_status->id;
+    if(to_status){
+        if(to_status->next)
+            since_id = to_status->next->id;
+        else
+            since_id = to_status->id;
+    }
     char *tmpfile;
     tmpfile = get_timeline(tl_index,since_id,max_id,DEFAUTL_REFRESH_COUNT);
-    load_timeline(tmpfile,timelines[current_tl_index],from_status,to_status);
+    notify_state_change(states[STATE_LOADING_UPDATES]);
+    int nr_newtweets = load_timeline(tmpfile,timelines[current_tl_index],from_status,to_status);
     remove(tmpfile);
+
+    return nr_newtweets;
 }
 
 int init_timelines(){
@@ -113,7 +120,6 @@ int authorize(clit_config *config){
         return -1;
     }
     else{
-        //printf("access_token:%s\naccess_token_secret:%s\nscreen_name:%s\nuser_id:%s\n",access_token,access_token_secret,screen_name,user_id);
         init_config(access_token,access_token_secret,user_id,screen_name,config);
         save_config(config);
         return 0;
@@ -152,7 +158,6 @@ void filter_status_text(status *s){
             strncpy(filtered_text[i],prev,len);
             filtered_text[i][len] = '\0';
             filter_list[i] = 0;
-            //printf("%s\n",filtered_text[i]);
             i++;
         }
 
@@ -161,7 +166,6 @@ void filter_status_text(status *s){
         strncpy(filtered_text[i],begin,len);
         filtered_text[i][len] = '\0';
         filter_list[i] = current_filter;
-        //printf("%s\n",filtered_text[i]);
         i++;
 
         begin = NULL;
@@ -179,7 +183,6 @@ void filter_status_text(status *s){
         filtered_text[i] = malloc((strlen(prev)+1)*sizeof(char));
         strcpy(filtered_text[i],prev);
         filter_list[i] = 0;
-        printf("%s\n",filtered_text[i]);
         i ++;
     }
     s->filter_count = i;
@@ -190,63 +193,66 @@ void filter_status_text(status *s){
  */
 int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_status){
     LIBXML_TEST_VERSION
-    statuses *toptweets = malloc(sizeof(statuses));
-    toptweets->count = 0;
-    parse_timeline(tmpfile,toptweets);
+    statuses *toptweets = newtimeline();
+
+    if(parse_timeline(tmpfile,toptweets) < 0)
+        return -1;
+
     for(status *s = toptweets->head; s; s = s->next){
         filter_status_text(s);
     }
 
+    if(!(toptweets->head) || toptweets->count == 0)
+        return 0;
     if(tl->count == 0){ // No old tweets
         tl->head = toptweets->head;
         tl->count = toptweets->count;
         return tl->count;
     }
     else{
+        int nr_newtweets = 0;
         status *top = toptweets->head;
-        status *oldtop = 0;
-        if(to_status)
-            oldtop = tl->head;
-        else
-            oldtop = to_status;
-        if(strcmp(top->id,oldtop->id) == 0)
-            return 0;
+        status *oldtop = to_status;
+        if(oldtop){
+            if(strcmp(top->id,oldtop->id) <= 0)
+                return 0;
 
-        status *prev = top;
-        while(top && oldtop){
-            int result = strcmp(top->id,oldtop->id);
-            if(result > 0){ // new tweet
-                prev = top;
-                top = top->next;
+            status *prev = top->prev;
+            while(top){
+                int result = strcmp(top->id,oldtop->id);
+                if(result > 0){ // new tweet
+                    prev = top;
+                    top = top->next;
+                    nr_newtweets ++;
+                }
+                else{
+                    if(prev){
+                        prev->next = oldtop;
+                        oldtop->prev = prev;
+                    }
+                    break;
+                }
             }
-            else if(result < 0){ // old tweet already deleted
-                status *tmp = oldtop;
-                oldtop = oldtop->next;
-                destroy_status(tmp);
-            }
-            else{
-                prev->next = oldtop;
-                oldtop->prev = prev;
-                break;
-            }
-        }
+            if(nr_newtweets == 0)
+                return 0;
 
-        // Gap between new and old tweets
-        if(!top){
-            status *gap = newgapstatus();
-            prev->next = gap;
-            gap->prev = prev;
-            gap->next = oldtop;
-            oldtop->prev = gap;
+            // Gap between new and old tweets
+            if(!top){
+                status *gap = newgapstatus();
+                prev->next = gap;
+                gap->prev = prev;
+                gap->next = oldtop;
+                oldtop->prev = gap;
+            }
         }
 
         // free deleted tweets
-        status *p = tl->head;
-        while(p && p != oldtop){
-            prev = p;
-            p = p->next;
-            free(prev);
-        }
+        //status *p = tl->head;
+        //while(p && p != oldtop){
+        //prev = p;
+        //p = p->next;
+        //free(prev);
+        //}
 
         if(from_status){
             from_status->next = toptweets->head;
@@ -256,6 +262,8 @@ int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_s
             tl->head = toptweets->head;
             tl->head->prev = NULL;
         }
+
+        return nr_newtweets;
     }
 }
 

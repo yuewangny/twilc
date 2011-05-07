@@ -63,13 +63,12 @@ void move_next(WINDOW *win, status *current, int direction){
     }
     if(!next){  // reached the bottom
         if(direction > 0)
-            notify_state_change(STATE_REACHED_BOTTOM);
+            notify_state_change(states[STATE_REACHED_BOTTOM]);
         else
-            notify_state_change(STATE_REACHED_TOP);
+            notify_state_change(states[STATE_REACHED_TOP]);
         return;
     }
 
-    //fprintf(stderr,"Next: %s\n",next->text);
     if(current != boundary){
         wmove(win,current->y_min,0);
         show_status(win,current);
@@ -81,6 +80,19 @@ void move_next(WINDOW *win, status *current, int direction){
     current_status[current_tl_index] = next;
 }
 
+void move_top(WINDOW *win){
+    status *top = timelines[current_tl_index]->head;
+    if(!top)
+        return;
+
+    int y,x;
+    getmaxyx(win,y,x);
+    status *bottom = show_timeline(win,top,y,x);
+    current_status[current_tl_index] = top;
+    current_top_status[current_tl_index] = top;
+    current_bottom_status[current_tl_index] = bottom;
+    highlight_status(win,top);
+}
 
 /**
  * Commands:
@@ -121,9 +133,11 @@ void wait_command(WINDOW *win){
         switch(ch){
             case 'n':
                 // Compose new tweet
+                notify_state_change(states[STATE_NORMAL]);
                 break;
             case 'J':
                 // move down one page
+                notify_state_change(states[STATE_NORMAL]);
                 if(move_next_page(win,current_bottom_status[current_tl_index],1) != -1){
                     current_status[current_tl_index] = current_top_status[current_tl_index];
                     highlight_status(win, current_status[current_tl_index]);
@@ -131,6 +145,7 @@ void wait_command(WINDOW *win){
                 break;
             case 'K':
                 // move up one page
+                notify_state_change(states[STATE_NORMAL]);
                 if(move_next_page(win,current_top_status[current_tl_index],-1)!= -1){
                     current_status[current_tl_index] = current_top_status[current_tl_index];
                     highlight_status(win, current_status[current_tl_index]);
@@ -138,17 +153,34 @@ void wait_command(WINDOW *win){
                 break;
             case 'j':
                 // move down one tweet
-                notify_state_change(STATE_NORMAL);
+                notify_state_change(states[STATE_NORMAL]);
                 move_next(win, current_status[current_tl_index],1);
                 break;
             case 'k':
                 // move up one tweet
-                notify_state_change(STATE_NORMAL);
+                notify_state_change(states[STATE_NORMAL]);
                 move_next(win, current_status[current_tl_index],-1);
                 break;
             case '.':
                 // refresh the current timeline
-                update_timeline(current_tl_index,NULL,current_top_status[current_tl_index]);
+                notify_state_change(states[STATE_RETRIEVING_UPDATES]);
+                status *to_status = timelines[current_tl_index]->head;
+                int res = update_timeline(current_tl_index,NULL,to_status);
+                if(res >= 0){
+                    char *state_str = malloc(20*sizeof(char));
+                    memset(state_str,'\0',20);
+                    if(res == 0)
+                        sprintf(state_str,"%s","No updates.");
+                    else if(res == 1)
+                        sprintf(state_str,"%d new tweet.",res);
+                    else
+                        sprintf(state_str,"%d new tweets.",res);
+                    notify_state_change(state_str);
+                    free(state_str);
+                }
+                else
+                    notify_state_change(states[STATE_RETRIEVE_FAILED]);
+                move_top(win);
                 break;
         }
     }
