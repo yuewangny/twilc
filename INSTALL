@@ -1,0 +1,9 @@
++---------------------+
+| Install from source |
++---------------------+
+
+======Linux===========
+
+$ ./configure
+# make && make install
+
