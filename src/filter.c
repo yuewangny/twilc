@@ -74,10 +74,12 @@ char *get_url_end(char *begin){
 void before_url(WINDOW *win){
     init_pair(3, COLOR_BLUE, COLOR_BLACK);
     wattron(win,COLOR_PAIR(3));
+    wattron(win,A_UNDERLINE);
 }
 
 void after_url(WINDOW *win){
     wattroff(win,COLOR_PAIR(3));
+    wattroff(win,A_UNDERLINE);
 }
 
 char *get_tag_end(char *begin){
