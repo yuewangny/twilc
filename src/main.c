@@ -204,6 +204,17 @@ void wait_command(WINDOW *win){
                 last_viewed_status[current_tl_index] = current_status[current_tl_index];
                 move_top(win);
                 break;
+            case 'v':
+                notify_state_change(STATE_NORMAL);
+                if(last_viewed_status[current_tl_index]){
+                    int y,x;
+                    status *last_viewed = last_viewed_status[current_tl_index];
+                    getmaxyx(win,y,x);
+                    show_timeline(win,last_viewed,y,x);
+                    highlight_status(win,last_viewed);
+                    current_status[current_tl_index] = last_viewed;
+                }
+                break;
         }
     }
 }
