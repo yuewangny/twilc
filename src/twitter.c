@@ -52,6 +52,7 @@ status *newstatus(){
     s->id = 0;
     s->composer.id = 0;
     s->composer.screen_name = 0;
+    s->extra_info = 0;
     s->text = 0;
     s->prev = 0;
     s->next = 0;
@@ -96,6 +97,7 @@ int init_timelines(){
     remove(tmpfile);
     current_status[0] = timelines[0]->head;
     current_top_status[0] = timelines[0]->head;
+    last_viewed_status[0] = NULL;
 
     current_tl_index = 0;
 
@@ -207,6 +209,20 @@ void filter_status_text(status *s){
         i ++;
     }
     s->filter_count = i;
+
+    for(int i=0;i<s->filter_count;++i)
+        if(filtered_text[i][0] == '@' && strcmp(filtered_text[i]+1,s->composer.screen_name) == 0){
+            SET_MENTIONED(s->extra_info);
+            break;
+        }
+}
+
+int change_separate_status(status *newsep){
+    status *s = separate_status[current_tl_index];
+    if(s)
+        UNSET_SEPARATED(s->extra_info);
+    separate_status[current_tl_index] = newsep;
+    SET_SEPARATED(newsep->extra_info);
 }
 
 /*
@@ -250,6 +266,7 @@ int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_s
                     if(prev){
                         prev->next = oldtop;
                         oldtop->prev = prev;
+                        change_separate_status(prev);
                     }
                     break;
                 }

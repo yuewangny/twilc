@@ -139,7 +139,7 @@ void move_top(WINDOW *win){
  * s -- search
  * t -- retweet
  * u --
- * v --
+ * v -- move to the last viewed tweet
  * w --
  * x --
  * y -- 
@@ -200,6 +200,8 @@ void wait_command(WINDOW *win){
                 }
                 else
                     notify_state_change(states[STATE_RETRIEVE_FAILED]);
+
+                last_viewed_status[current_tl_index] = current_status[current_tl_index];
                 move_top(win);
                 break;
         }

@@ -201,7 +201,10 @@ status *show_timeline(WINDOW *win, status *p,int height, int width){
 
         if(p->y_max >= height-3)
             break;
-        draw_border(win,'-');
+        if(IS_SEPARATED(p->extra_info))
+            draw_border(win,'~');
+        else
+            draw_border(win,'-');
         prev = p;
         p = p->next;
     }

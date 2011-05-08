@@ -26,7 +26,7 @@
 #include "filter.h"
 #include "config.h"
 
-#define MAX_FILTERS_PER_STATUS 20
+#define MAX_FILTERS_PER_STATUS 30
 typedef struct {
     char *id;
     char *screen_name;
@@ -61,12 +61,27 @@ typedef struct{
     int count;
 } statuses;
 
+#define IS_SEPARATED(a)  a & 0x80
+#define SET_SEPARATED(a) a |= 0x80
+#define UNSET_SEPARATED(a) a &= 0x7F
+
+#define IS_MENTIONED(a)  a & 0x40
+#define SET_MENTIONED(a) a |= 0x40
+
+#define IS_RETWEETED(a) a & 0x20
+#define SET_RETWEETED(a) a |= 0x20
+
+#define IS_FROMSELF(a) a & 0x10
+#define SET_FROMSELF(a) a |= 0x10
+
 #define TIMELINE_COUNT 1 //0 for home, 1 for mention
 
 statuses *timelines[TIMELINE_COUNT];
 status *current_status[TIMELINE_COUNT];
 status *current_top_status[TIMELINE_COUNT];
 status *current_bottom_status[TIMELINE_COUNT];
+status *last_viewed_status[TIMELINE_COUNT];
+status *separate_status[TIMELINE_COUNT];
 
 int current_tl_index;
 
