@@ -35,7 +35,8 @@ typedef struct {
 typedef struct status_str{
     // content of the status
     char *id;
-    user composer;
+    user *composer;
+    user *retweeter;
     char *text;
 
     // position to show
@@ -74,6 +75,14 @@ typedef struct{
 #define IS_FROMSELF(a) a & 0x10
 #define SET_FROMSELF(a) a |= 0x10
 
+#define IS_FAVORITED(a) a & 0x08
+#define SET_FAVORITED(a) a |= 0x08
+#define UNSET_FAVORITED(a) a &= 0xF7
+
+#define IS_RETWEETEDBYSELF a & 0x04
+#define SET_RETWEETEDBYSELF a |= 0x04
+#define UNSET_RETWEETEDBYSELF a &= 0xFB
+
 #define TIMELINE_COUNT 1 //0 for home, 1 for mention
 
 statuses *timelines[TIMELINE_COUNT];
@@ -90,6 +99,8 @@ int update_timeline(int tl_index, status *from_status, status *to_status);
 int load_timeline(char *tmpfile, statuses *tl,status *from,status *to);
 void filter_status_text(status *s);
 
+user *newuser();
+int destroy_user();
 status *newstatus();
 int init_timelines();
 int destroy_timeline(statuses *tl);

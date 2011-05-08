@@ -36,14 +36,82 @@ int parse_xml_file(char *filename, xmlDocPtr *docptr){
     return 0;
 }
 
+int parse_user(xmlDocPtr *doc, xmlNode *node, user *usr){
+    if(!doc || !node)
+        return -1;
+
+    if(!usr)
+        return -1;
+    xmlNode *attr = node->children;
+
+    while(attr){ // parse status attributes
+        if(!xmlStrcmp(attr->name, (const xmlChar *)"screen_name")){
+            char *screen_name = xmlNodeListGetString(*doc, attr->xmlChildrenNode, 1);
+            if(screen_name){
+                usr->screen_name = malloc(strlen(screen_name)+1); 
+                strcpy(usr->screen_name,screen_name);
+            }
+        }
+        attr = attr->next;
+    }
+    return 0;
+}
+
+int parse_status(xmlDocPtr *doc, xmlNode *node, status *st){
+    if(!node || !doc)
+        return -1;
+    if(!st)
+        st = newstatus();
+    xmlNode *attr = node->children;
+
+    while(attr){ // parse status attributes
+        if(!xmlStrcmp(attr->name, (const xmlChar *)"id")){ //status id
+            char *id = xmlNodeListGetString(*doc, attr->xmlChildrenNode, 1);
+            if(id){
+                st->id = malloc(strlen(id)+1);
+                strcpy(st->id,id);
+            }
+            else
+                break;
+        }
+        else if(!xmlStrcmp(attr->name, (const xmlChar *)"text")){ //status text
+            char *text = xmlNodeListGetString(*doc, attr->xmlChildrenNode, 1);
+            if(text){
+                st->text = malloc(strlen(text)+1);
+                strcpy(st->text,text);
+            }
+        }
+        else if(!xmlStrcmp(attr->name, (const xmlChar *)"favorited")){ 
+            char *favorited = xmlNodeListGetString(*doc, attr->xmlChildrenNode, 1);
+            if(favorited && strcmp(favorited,"true") == 0)
+                SET_FAVORITED(st->extra_info);
+        }
+        else if(!xmlStrcmp(attr->name, (const xmlChar *)"user")){ //user
+            if(!st->composer){
+                st->composer = newuser();
+                parse_user(doc,attr,st->composer);
+            }
+        }
+        attr = attr->next;
+    }
+    return 0;
+}
+
 int parse_statuses(xmlDocPtr *doc,xmlNode *node, statuses *tl){
+    if(!tl)
+        return -1;
+
     int nr_statuses = 0;
     status *prev = NULL;
     while(node){
-        if(node->type == XML_ELEMENT_NODE && strcmp(node->name,"status")==0){
+        if(node->type == XML_ELEMENT_NODE && !xmlStrcmp(node->name,(const xmlChar *)"status")){
             xmlNode *attr = node->children;
 
             status *st = newstatus();
+            if(!st)
+                continue;
+
+            // insert the tweet into the list
             st->next = NULL;
             nr_statuses ++;
             if(nr_statuses == 1)
@@ -51,44 +119,28 @@ int parse_statuses(xmlDocPtr *doc,xmlNode *node, statuses *tl){
             else prev->next = st;
             st->prev = prev;
 
+            // Parse the tweet
+            xmlNode *rtnode = NULL;
             while(attr){ // parse status attributes
-                if(!xmlStrcmp(attr->name, (const xmlChar *)"id")){ //status id
-                    char *id = xmlNodeListGetString(*doc, attr->xmlChildrenNode, 1);
-                    if(id){
-                        st->id = malloc(strlen(id)+1);
-                        strcpy(st->id,id);
-                    }
-                    else
-                        break;
-                }
-                else if(!xmlStrcmp(attr->name, (const xmlChar *)"text")){ //status text
-                    char *text = xmlNodeListGetString(*doc, attr->xmlChildrenNode, 1);
-                    if(text){
-                        st->text = malloc(strlen(text)+1);
-                        strcpy(st->text,text);
-                    }
-                }
+                if(!xmlStrcmp(attr->name,(const xmlChar *)"retweeted_status")) // a retweeted status
+                    rtnode = attr;
                 else if(!xmlStrcmp(attr->name, (const xmlChar *)"user")){ //user
-                    xmlNode *user_attr = attr->children;
-                    while(user_attr){
-                        if(!xmlStrcmp(user_attr->name, (const xmlChar *)"screen_name")){
-                            char *screen_name = xmlNodeListGetString(*doc, user_attr->xmlChildrenNode, 1);
-                            if(screen_name){
-                                st->composer.screen_name = malloc(strlen(screen_name)+1); 
-                                strcpy(st->composer.screen_name,screen_name);
-                            }
-                        }
-                        user_attr = user_attr->next;
-                    }
+                    st->composer = newuser();
+                    parse_user(doc,attr,st->composer);
                 }
                 attr = attr->next;
             }
-            if(st){
-                //printf("%15s -- %s\n",st->composer.screen_name,st->text);
-                prev = st;
+            if(rtnode){
+                st->retweeter = st->composer;
+                st->composer = NULL;
+                parse_status(doc,rtnode,st);
             }
+            else
+                parse_status(doc,node,st);
+
+            prev = st;
         }
-        node = node->next;
+        node = node->next; //next tweet
     }
     tl->count = nr_statuses;
     return nr_statuses;

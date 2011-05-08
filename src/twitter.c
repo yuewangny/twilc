@@ -47,11 +47,18 @@ status *newgapstatus(){
     return s;
 }
 
+user *newuser(){
+    user *usr = malloc(sizeof(user));
+    usr->id = 0;
+    usr->screen_name = 0;
+    return usr;
+}
+
 status *newstatus(){
     status *s = malloc(sizeof(status));
     s->id = 0;
-    s->composer.id = 0;
-    s->composer.screen_name = 0;
+    s->composer = 0;
+    s->retweeter = 0;
     s->extra_info = 0;
     s->text = 0;
     s->prev = 0;
@@ -117,16 +124,24 @@ int destroy_timeline(statuses *tl){
     return 0;
 }
 
+int destroy_user(user *usr){
+    if(usr){
+        if(usr->id)free(usr->id);
+        if(usr->screen_name)free(usr->screen_name);
+        free(usr);
+    }
+    return 0;
+}
 
 int destroy_status(status *s){
     if(!s)
         return 0;
     if(s->id){
         free(s->id);
-        if(s->composer.id)free(s->composer.id);
-        if(s->composer.screen_name)free(s->composer.screen_name);
         for(int i=0;i<s->filter_count;i++)
             free(s->filtered_text[i]);
+        destroy_user(s->composer);
+        destroy_user(s->retweeter);
     }
     free(s);
     return 0;
@@ -211,7 +226,7 @@ void filter_status_text(status *s){
     s->filter_count = i;
 
     for(int i=0;i<s->filter_count;++i)
-        if(filtered_text[i][0] == '@' && strcmp(filtered_text[i]+1,s->composer.screen_name) == 0){
+        if(filtered_text[i][0] == '@' && strcmp(filtered_text[i]+1,s->composer->screen_name) == 0){
             SET_MENTIONED(s->extra_info);
             break;
         }

@@ -174,7 +174,7 @@ int show_status(WINDOW *win,status *p){
         return -1;
     init_pair(5, COLOR_GREEN, COLOR_BLACK);
     wattron(win,COLOR_PAIR(5));
-    waddstr(win,p->composer.screen_name);
+    waddstr(win,p->composer->screen_name);
     wattroff(win,COLOR_PAIR(5));
     waddch(win,'\n');
 
