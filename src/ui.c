@@ -40,7 +40,8 @@ const char *states[NR_STATES] = {"",
           "Retrieving timeline updates...",
           "Timeline updated.",
           "Failed to retrieve updates.",
-          "Loading timeline updates..."};
+          "Loading timeline updates...",
+          "No last viewed status."};
 
 int draw_border(WINDOW *win, char c){
     int height,width;
@@ -192,6 +193,7 @@ status *show_timeline(WINDOW *win, status *p,int height, int width){
         return 0;
 
     int y,x;
+    wclear(win);
     wmove(win,0,0);
     status *prev = NULL;
     while(p){

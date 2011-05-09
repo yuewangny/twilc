@@ -31,6 +31,7 @@
 #include "twiparse.h"
 #include "twiaction.h"
 #include "ui.h"
+#include "twierror.h"
 
 #define GAP_STATUS_ID 0
 #define GAP_STATUS_TEXT "gap"
@@ -87,6 +88,8 @@ int update_timeline(int tl_index, status *from_status, status *to_status){
     }
     char *tmpfile;
     tmpfile = get_timeline(tl_index,since_id,max_id,DEFAUTL_REFRESH_COUNT);
+    if(!tmpfile)
+        return -1;
     notify_state_change(states[STATE_LOADING_UPDATES]);
     int nr_newtweets = load_timeline(tmpfile,timelines[current_tl_index],from_status,to_status);
     remove(tmpfile);

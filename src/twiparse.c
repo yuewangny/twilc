@@ -24,13 +24,15 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "twitter.h"
+#include "twierror.h"
 
 int parse_xml_file(char *filename, xmlDocPtr *docptr){
     *docptr = xmlReadFile(filename, NULL, 0);
     if(*docptr == NULL){
-        fprintf(stderr,"Error: failed to parse!\n");
+        SET_ERROR_NUMBER(ERROR_XML_PARSE);
         return -1;
     }
     return 0;
@@ -158,7 +160,10 @@ int parse_timeline(char *filename, statuses *tl){
         if(parse_statuses(&doc,root_element->children, tl) < 0)
             result = -1;
     }
-    else result = -1;
+    else{
+        result = -1;
+        // Parse error status here. to complete.
+    } 
 
     xmlFreeDoc(doc);
     xmlCleanupParser();
@@ -167,7 +172,7 @@ int parse_timeline(char *filename, statuses *tl){
 }
 
 /*
-int main(){
+int test_xml_parse(){
     LIBXML_TEST_VERSION
     statuses tl;
     parse_timeline("clit.tmp",&tl); 

@@ -23,6 +23,7 @@
 #include <string.h>
 #include <libxml/parser.h>
 #include <locale.h>
+#include <pthread.h>
 
 #include "twitter.h"
 #include "config.h"
@@ -31,10 +32,13 @@
 #include "filter.h"
 #include "twiparse.h"
 #include "ui.h"
+#include "twierror.h"
 
 int move_next_page(WINDOW *win, status *page_start, int direction){
-    if(!page_start)
+    if(!page_start){
+        SET_ERROR_NUMBER(ERROR_PAGE_START);
         return -1;
+    }
 
     status *top = 0;
     status *bottom = 0;
@@ -162,6 +166,11 @@ void wait_command(WINDOW *win){
                     current_status[current_tl_index] = current_top_status[current_tl_index];
                     highlight_status(win, current_status[current_tl_index]);
                 }
+                else{
+                    while(pthread_mutex_lock(error_mutex));
+                    notify_state_change(get_error_string(error_no));
+                    pthread_mutex_unlock(error_mutex);
+                }
                 break;
             case 'K':
                 // move up one page
@@ -169,6 +178,11 @@ void wait_command(WINDOW *win){
                 if(move_next_page(win,current_top_status[current_tl_index],-1)!= -1){
                     current_status[current_tl_index] = current_top_status[current_tl_index];
                     highlight_status(win, current_status[current_tl_index]);
+                }
+                else{
+                    while(pthread_mutex_lock(error_mutex));
+                    notify_state_change(get_error_string(error_no));
+                    pthread_mutex_unlock(error_mutex);
                 }
                 break;
             case 'j':
@@ -199,13 +213,14 @@ void wait_command(WINDOW *win){
                     free(state_str);
                 }
                 else
-                    notify_state_change(states[STATE_RETRIEVE_FAILED]);
+                    //notify_state_change(states[STATE_RETRIEVE_FAILED]);
+                    notify_state_change(get_error_string(error_no));
 
                 last_viewed_status[current_tl_index] = current_status[current_tl_index];
                 move_top(win);
                 break;
             case 'v':
-                notify_state_change(STATE_NORMAL);
+                notify_state_change(states[STATE_NORMAL]);
                 if(last_viewed_status[current_tl_index]){
                     int y,x;
                     status *last_viewed = last_viewed_status[current_tl_index];
@@ -214,9 +229,22 @@ void wait_command(WINDOW *win){
                     highlight_status(win,last_viewed);
                     current_status[current_tl_index] = last_viewed;
                 }
+                else
+                    notify_state_change(states[STATE_NO_LAST_VIEWED]);
                 break;
         }
     }
+}
+
+int init_mutex(){
+    int result;
+    error_mutex = malloc(sizeof(pthread_mutex_t));
+    result = pthread_mutex_init(error_mutex,NULL);
+    return result;
+}
+
+int destroy_mutex(){
+    pthread_mutex_destroy(error_mutex);
 }
 
 int main(){
@@ -236,6 +264,7 @@ int main(){
     init_oauth(config->key,config->secret);
     create_filters();
     init_timelines();
+    init_mutex();
 
     setlocale(LC_ALL,"");
     initscr();
@@ -263,6 +292,7 @@ exit_twilc:
     curs_set(1);
     endwin(); 
     destroy_filters();
+    destroy_mutex();
     for(int i = 0; i < TIMELINE_COUNT; ++i)
         destroy_timeline(timelines[i]);
 

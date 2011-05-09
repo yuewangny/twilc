@@ -26,7 +26,7 @@
 #include "filter.h"
 #include "config.h"
 
-#define MAX_FILTERS_PER_STATUS 30
+#define MAX_FILTERS_PER_STATUS 50
 typedef struct {
     char *id;
     char *screen_name;

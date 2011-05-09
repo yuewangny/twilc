@@ -15,6 +15,9 @@
 /* Define to 1 if you have the `oauth' library (-loauth). */
 #undef HAVE_LIBOAUTH
 
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#undef HAVE_LIBPTHREAD
+
 /* Define to 1 if you have the `xml2' library (-lxml2). */
 #undef HAVE_LIBXML2
 

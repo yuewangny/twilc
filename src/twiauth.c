@@ -24,8 +24,10 @@
 #include <string.h>
 #include <oauth.h>
 #include <curl/curl.h>
+#include <pthread.h>
 
 #include "twiauth.h"
+#include "twierror.h"
 
 #define TEMP_FILE "clit.tmp"
 
@@ -54,22 +56,27 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
     reply = oauth_http_post(req_url, postarg);
     if(req_url) free(req_url);
     if(postarg) free(postarg);
-    if(!reply)
-        return 1;
+    if(!reply){
+        error_no = ERROR_NETWORK_CONNECTION;
+        return -1;
+    }
 
     rc = oauth_split_url_parameters(reply, &rv);
     qsort(rv, rc, sizeof(char *), oauth_cmpstringp);
     if(rc != 3 || strncmp(rv[0],"oauth_callback_confirmed=true",29) || strncmp(rv[1], "oauth_token=",11) || strncmp(rv[2],"oauth_token_secret=",18)){
         free(rv);
-        return 1;
+        error_no = ERROR_OAUTH_REPLY;
+        return -1;
     }
 
     oauth_token = strdup(rv[1]+12);
     oauth_token_secret = strdup(rv[2]+19);
     free(rv);
     free(reply);
-    if(!oauth_token || !oauth_token_secret)
-        return 1;
+    if(!oauth_token || !oauth_token_secret){
+        error_no = UNKNOWN_ERROR;
+        return -1;
+    }
     
     printf("Please authorize: %s?oauth_token=%s\n",AUTHORIZE_URL,oauth_token);
     oauth_verifier = (char *)malloc(8*sizeof(char));
@@ -77,7 +84,8 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
     scanf("%s",oauth_verifier);
     if(strlen(oauth_verifier) != 7){
         free(oauth_verifier);
-        return 1;
+        error_no = ERROR_OAUTH_PIN_LENGTH;
+        return -1;
     }
     
     postarg = NULL; 
@@ -88,8 +96,10 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
 
     free(req_url);
     free(postarg);
-    if(!reply)
-        return 1;
+    if(!reply){
+        error_no = ERROR_NETWORK_CONNECTION;
+        return -1;
+    }
 
     rv = NULL;
     rc = oauth_split_url_parameters(reply, &rv);
@@ -98,7 +108,8 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
 
     if(rc !=4 || strncmp(rv[0],"oauth_token=",11) || strncmp(rv[1],"oauth_token_secret=",18) || strncmp(rv[2],"screen_name=",11) || strncmp(rv[3],"user_id=",7)){
         free(rv);
-        return 1;
+        error_no = ERROR_OAUTH_REPLY;
+        return -1;
     }
     *access_token = (char *)malloc((strlen(rv[0])-11)*sizeof(char));
     *access_token_secret = (char *)malloc((strlen(rv[1]-18))*sizeof(char));
@@ -117,8 +128,10 @@ int oauth_authorize(char **access_token, char **access_token_secret, char **user
 }
 
 int init_oauth(char *key, char *secret){
-    if(key == NULL || secret == NULL)
+    if(key == NULL || secret == NULL){
+        error_no = ERROR_CONFIG_WRONG;
         return -1;
+    }
     ACCESS_TOKEN = key;
     ACCESS_TOKEN_SECRET = secret;
     return 0;
@@ -131,14 +144,20 @@ char *http_get(char *url){
     if(handle){
         curl_easy_setopt(handle,CURLOPT_URL,url);
         fp = fopen(TEMP_FILE,"w+");
-        if(!fp)
+        if(!fp){
+            SET_ERROR_NUMBER(ERROR_NO_WRITE_PRIVILEDGE);
             return NULL;
+        }
         else{
             curl_easy_setopt(handle,CURLOPT_WRITEDATA,fp);
             CURLcode res = curl_easy_perform(handle);
             curl_easy_cleanup(handle);
             fclose(fp);
         }
+    }
+    else{
+        SET_ERROR_NUMBER(ERROR_NETWORK_CONNECTION);
+        return NULL;
     }
 
     return TEMP_FILE;

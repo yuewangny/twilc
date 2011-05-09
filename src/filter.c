@@ -93,12 +93,12 @@ char *get_tag_end(char *begin){
     return p;
 }
 
-char *before_tag(WINDOW *win){
+void before_tag(WINDOW *win){
     init_pair(2, COLOR_RED, COLOR_BLACK);
     wattron(win,COLOR_PAIR(2));
 }
 
-char *after_tag(WINDOW *win){
+void after_tag(WINDOW *win){
     wattroff(win, COLOR_PAIR(2));
 }
 

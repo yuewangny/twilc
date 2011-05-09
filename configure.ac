@@ -17,6 +17,7 @@ AC_CHECK_LIB([oauth], [oauth_sign_url2], ,AC_ERROR(liboauth not found))
 AC_CHECK_LIB([xml2], [xmlDocGetRootElement], ,AC_ERROR(libxml2 not found))
 AC_CHECK_LIB([z], [gzread], ,AC_ERROR(zlib not found))
 AC_CHECK_LIB([curl],[curl_global_init], ,AC_ERROR(libcurl not found))
+AC_CHECK_LIB([pthread],[pthread_mutex_init], , AC_ERROR(pthread not found))
 
 # Checks for header files.
 AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])

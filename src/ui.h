@@ -51,8 +51,9 @@ WINDOW *state_win;
 #define STATE_TL_UPDATED 4
 #define STATE_RETRIEVE_FAILED 5 
 #define STATE_LOADING_UPDATES 6 
+#define STATE_NO_LAST_VIEWED 7
 
-#define NR_STATES 7 
+#define NR_STATES 8 
 
 const char *states[NR_STATES];
 
