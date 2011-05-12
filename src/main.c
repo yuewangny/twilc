@@ -167,9 +167,9 @@ void wait_command(WINDOW *win){
                     highlight_status(win, current_status[current_tl_index]);
                 }
                 else{
-                    while(pthread_mutex_lock(error_mutex));
+                    while(pthread_mutex_lock(&error_mutex));
                     notify_state_change(get_error_string(error_no));
-                    pthread_mutex_unlock(error_mutex);
+                    pthread_mutex_unlock(&error_mutex);
                 }
                 break;
             case 'K':
@@ -180,9 +180,9 @@ void wait_command(WINDOW *win){
                     highlight_status(win, current_status[current_tl_index]);
                 }
                 else{
-                    while(pthread_mutex_lock(error_mutex));
+                    while(pthread_mutex_lock(&error_mutex));
                     notify_state_change(get_error_string(error_no));
-                    pthread_mutex_unlock(error_mutex);
+                    pthread_mutex_unlock(&error_mutex);
                 }
                 break;
             case 'j':
@@ -237,14 +237,13 @@ void wait_command(WINDOW *win){
 }
 
 int init_mutex(){
-    int result;
-    error_mutex = malloc(sizeof(pthread_mutex_t));
-    result = pthread_mutex_init(error_mutex,NULL);
-    return result;
+    pthread_mutex_init(&error_mutex,NULL);
+    return 0;
 }
 
 int destroy_mutex(){
-    pthread_mutex_destroy(error_mutex);
+    pthread_mutex_destroy(&error_mutex);
+    return 0;
 }
 
 int main(){
@@ -263,7 +262,13 @@ int main(){
 
     init_oauth(config->key,config->secret);
     create_filters();
-    init_timelines();
+    printf("Loading the timelines....\n");
+    if(init_timelines() == -1){
+        pthread_mutex_lock(&error_mutex);
+        printf("Cannot load the timeline. Please check your network connection.\n");
+        pthread_mutex_unlock(&error_mutex);
+        goto exit_twilc;
+    }
     init_mutex();
 
     setlocale(LC_ALL,"");

@@ -117,8 +117,8 @@ int init_ui(){
         return -1;
 
     init_title_win();
-    init_tl_win();
     init_state_win(STATE_NORMAL);
+    init_tl_win();
 }
 
 int destroy_ui(){

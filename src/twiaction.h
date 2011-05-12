@@ -26,6 +26,14 @@
 #define TL_TYPE_MENTION 1
 #define TL_TYPE_USER 2
 
+typedef struct {
+    int timeline_type;
+    char *since_id;
+    char *max_id;
+    char *count;
+}get_timeline_arg;
+
+
 char *get_timeline(int timeline_type, char *since_id,char *max_id,char *count);
 
 #endif

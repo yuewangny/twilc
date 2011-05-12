@@ -103,6 +103,8 @@ int init_timelines(){
     }
     statuses *home = timelines[0];
     char *tmpfile = get_timeline(TL_TYPE_HOME, NULL,NULL,DEFAULT_LOAD_COUNT);
+    if(!tmpfile)
+        return -1;
     load_timeline(tmpfile,home,NULL,NULL);
     remove(tmpfile);
     current_status[0] = timelines[0]->head;
