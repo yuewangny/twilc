@@ -38,7 +38,9 @@ int highlight_status(WINDOW *win, status *s);
 
 int init_ui();
 int destroy_ui();
+int notify_error_state();
 int notify_state_change(const char *);
+int refresh_status_height(WINDOW *,status *,status *);
 
 WINDOW *title_win;
 WINDOW *tl_win;

@@ -24,6 +24,7 @@
 #include <string.h>
 #include <libxml/parser.h>
 #include <locale.h>
+#include <pthread.h>
 
 #include "twitter.h"
 #include "config.h"
@@ -32,6 +33,7 @@
 #include "filter.h"
 #include "twiparse.h"
 #include "ui.h"
+#include "twierror.h"
 
 char *titles[3] = {"Home","Mention","Profile"};
 const char *states[NR_STATES] = {"",
@@ -96,6 +98,14 @@ int init_state_win(int which_state){
     waddstr(state_win, states[which_state]);
     wrefresh(state_win);
     return 0;
+}
+
+int notify_error_state(){
+    int errnum;
+    pthread_mutex_lock(&error_mutex);
+    errnum = error_no;
+    pthread_mutex_unlock(&error_mutex);
+    notify_state_change(get_error_string(errnum));
 }
 
 int notify_state_change(const char *state_str){
@@ -167,6 +177,15 @@ void filter_display(WINDOW *win, status *p){
     }
     else
         waddstr(win,p->text);
+}
+
+int refresh_status_height(WINDOW *win,status *start,status *end){
+    status *p;
+    for(p = start; p && p != end; p = p->next){
+        wmove(win,0,0);
+        show_status(win,p);
+    }
+    return 0;
 }
 
 

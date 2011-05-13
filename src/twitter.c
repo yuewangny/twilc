@@ -64,6 +64,8 @@ status *newstatus(){
     s->text = 0;
     s->prev = 0;
     s->next = 0;
+    s->y_min = -1;
+    s->y_max = -1;
     return s;
 }
 
@@ -264,6 +266,7 @@ int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_s
     if(tl->count == 0){ // No old tweets
         tl->head = toptweets->head;
         tl->count = toptweets->count;
+        refresh_status_height(tl_win,tl->head,NULL);
         return tl->count;
     }
     else{
@@ -321,6 +324,7 @@ int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_s
             tl->head->prev = NULL;
         }
 
+        refresh_status_height(tl_win,toptweets->head,oldtop);
         return nr_newtweets;
     }
 }
