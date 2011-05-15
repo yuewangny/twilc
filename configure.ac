@@ -10,14 +10,10 @@ AM_INIT_AUTOMAKE()
 
 # Checks for programs.
 AC_PROG_CC
-
-AC_CHECK_LIB([m], [cos], ,AC_ERROR(libm not found))
-AC_CHECK_LIB([ncursesw], [initscr], ,AC_ERROR(ncursesw not found))
-AC_CHECK_LIB([oauth], [oauth_sign_url2], ,AC_ERROR(liboauth not found))
-AC_CHECK_LIB([xml2], [xmlDocGetRootElement], ,AC_ERROR(libxml2 not found))
-AC_CHECK_LIB([z], [gzread], ,AC_ERROR(zlib not found))
-AC_CHECK_LIB([curl],[curl_global_init], ,AC_ERROR(libcurl not found))
-AC_CHECK_LIB([pthread],[pthread_mutex_init], , AC_ERROR(pthread not found))
+AC_PROG_CC_C99
+if test "x$ac_cv_prog_cc_c99" = xno; then
+    AC_MSG_ERROR([You need a compiler that supports c99])
+fi
 
 # Checks for header files.
 AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
@@ -44,8 +40,14 @@ if test "x$XML2_INCLUDE" = "x"; then
     done
     LDFLAGS="$old_LDFLAGS $XML2_INCLUDE"
 fi
-# We need c99
-CFLAGS="$CFLAGS -std=gnu99"
+
+AC_CHECK_LIB([m], [cos], ,AC_ERROR(libm not found))
+AC_CHECK_LIB([ncursesw], [initscr], ,AC_ERROR(ncursesw not found))
+AC_CHECK_LIB([oauth], [oauth_sign_url2], ,AC_ERROR(liboauth not found))
+AC_CHECK_LIB([xml2], [xmlDocGetRootElement], ,AC_ERROR(libxml2 not found))
+AC_CHECK_LIB([z], [gzread], ,AC_ERROR(zlib not found))
+AC_CHECK_LIB([curl],[curl_global_init], ,AC_ERROR(libcurl not found))
+AC_CHECK_LIB([pthread],[pthread_mutex_init], , AC_ERROR(pthread not found))
 
 # Checks for typedefs, structures, and compiler characteristics.
 
