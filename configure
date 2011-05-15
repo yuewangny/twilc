@@ -4224,7 +4224,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 if test "x$XML2_INCLUDE" = "x"; then
     old_LDFLAGS="$LDFLAGS"
     for i in $xml2_include_dir /usr/include /usr/local/include /usr/include/libxml2 /usr/local/include/libxml2 ; do
-        CPPFLAGS="$old_LDFLAGS -I$i"
+        CFLAGS="$old_LDFLAGS -I$i"
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <libxml/xmlmemory.h>

@@ -29,7 +29,7 @@ AC_TRY_COMPILE([#include <libxml/xmlmemory.h>], [int a = 1;],
 if test "x$XML2_INCLUDE" = "x"; then
     old_LDFLAGS="$LDFLAGS"
     for i in $xml2_include_dir /usr/include /usr/local/include /usr/include/libxml2 /usr/local/include/libxml2 ; do
-        CPPFLAGS="$old_LDFLAGS -I$i"
+        CFLAGS="$old_LDFLAGS -I$i"
         AC_TRY_COMPILE([#include <libxml/xmlmemory.h>], [int a = 1;],
             XML2_INCLUDE="-I$i",
             XML2_INCLUDE=
