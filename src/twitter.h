@@ -23,43 +23,76 @@
 #define TWITTER_H
 
 #include <stdint.h>
-#include "filter.h"
+#include <pthread.h>
+#include <glib.h>
+#include <wchar.h>
+
+#include "entity.h"
 #include "config.h"
 
-#define MAX_FILTERS_PER_STATUS 50
+// user
 typedef struct {
     char *id;
     char *screen_name;
+    char *name;
+
+    char *location;
+    char *bio;
+    char *url;
+
+    uint8_t extra_info; //protected,following,followed
 } user;
 
+// entity types
+#define ENTITY_MENTION_TYPE 0 
+#define ENTITY_URL_TYPE 1
+#define ENTITY_HASHTAG_TYPE 2
+
+
+#define TWEET_MAX_LEN 140
+
+// status
 typedef struct status_str{
     // content of the status
     char *id;
     user *composer;
-    user *retweeter;
-    char *text;
+    wchar_t *wtext;
+    struct status_str *retweeted_status;
+    uint8_t length; //number of characters
+
+    // in reply to
+    char *in_reply_to_status_id;
+    void *conversation; // status_node *conversation
+
+    // extra information
+    uint8_t extra_info;
+
+    entity *entities;
+    int entity_count;
+} status;
+
+// displayed status
+struct status_node{
+    status *st;
+
+    struct status_node *prev;
+    struct status_node *next;
 
     // position to show
     int y_min;
     int y_max;
+};
 
-    uint8_t extra_info;
-
-    char *filtered_text[MAX_FILTERS_PER_STATUS];
-    display_filter *filter_list[MAX_FILTERS_PER_STATUS];
-    int filter_count;
-    int x_filter_begin[MAX_FILTERS_PER_STATUS];
-    int y_filter_begin[MAX_FILTERS_PER_STATUS];
-    int x_filter_end[MAX_FILTERS_PER_STATUS];
-    int y_filter_end[MAX_FILTERS_PER_STATUS];
-
-    struct status_str *prev;
-    struct status_str *next;
-} status;
-
+// timeline
+// 28 bytes
 typedef struct{
-    status *head;
+    struct status_node *head;
     int count;
+    struct status_node *current;
+    struct status_node *current_top;
+    struct status_node *current_bottom;
+    struct status_node *last_viewed;
+    struct status_node *separate;
 } statuses;
 
 #define IS_SEPARATED(a)  a & 0x80
@@ -86,22 +119,31 @@ typedef struct{
 #define TIMELINE_COUNT 1 //0 for home, 1 for mention
 
 statuses *timelines[TIMELINE_COUNT];
-status *current_status[TIMELINE_COUNT];
-status *current_top_status[TIMELINE_COUNT];
-status *current_bottom_status[TIMELINE_COUNT];
-status *last_viewed_status[TIMELINE_COUNT];
-status *separate_status[TIMELINE_COUNT];
 
+// status hashmap
+GHashTable *status_map;
+pthread_mutex_t status_map_mutex;
+
+// user hashmap
+GHashTable *user_map;
+pthread_mutex_t user_map_mutex;
+
+// the index of current displaying timeline
 int current_tl_index;
 
 int authorize(clit_config *config);
-int update_timeline(int tl_index, status *from_status, status *to_status);
-int load_timeline(char *tmpfile, statuses *tl,status *from,status *to);
-void filter_status_text(status *s);
+int update_timeline(int tl_index, struct status_node *from_status, struct status_node *to_status);
+int load_timeline(char *tmpfile, statuses *tl,struct status_node *from,struct status_node *to);
+void build_status_entities(status *s);
+
+int char2wchar(wchar_t *deststr,char *srcstr);
 
 user *newuser();
+entity *newentity();
 int destroy_user();
 status *newstatus();
+void split_status_entities(status *st);
+struct status_node *newstatusnode(status *st);
 int init_timelines();
 int destroy_timeline(statuses *tl);
 int destroy_status(status *s);

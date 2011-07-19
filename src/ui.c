@@ -18,8 +18,9 @@
  *
  **/
 
-
+#include <wchar.h>
 #include <ncurses.h>
+#include <curses.h>
 #include <stdlib.h>
 #include <string.h>
 #include <libxml/parser.h>
@@ -30,7 +31,7 @@
 #include "config.h"
 #include "twiauth.h"
 #include "twiaction.h"
-#include "filter.h"
+#include "entity.h"
 #include "twiparse.h"
 #include "ui.h"
 #include "twierror.h"
@@ -60,9 +61,9 @@ int init_tl_win(){
     wmove(tl_win,0,0);
     int height,width;
     getmaxyx(tl_win,height,width);
-    current_bottom_status[current_tl_index] = show_timeline(tl_win,current_status[current_tl_index],height,width);
+    timelines[current_tl_index]->current_bottom = show_timeline(tl_win,timelines[current_tl_index]->current,height,width);
     wrefresh(tl_win);
-    highlight_status(tl_win,current_status[current_tl_index]);
+    highlight_status(tl_win,timelines[current_tl_index]->current);
     return 0;
 }
 
@@ -117,10 +118,13 @@ int notify_state_change(const char *state_str){
 }
 
 int init_ui(){
-    int height,width;
+    int height,width,column_width;
     getmaxyx(stdscr,height,width);
+
+    column_width = width;
+
     title_win = newwin(2,width,0,0);
-    tl_win = newwin(height-4,width,2,0);
+    tl_win = newwin(height-4,column_width,2,0);
     state_win = newwin(2,width,height-2,0);
 
     if(!title_win || !tl_win || !state_win)
@@ -140,24 +144,8 @@ int destroy_ui(){
         delwin(state_win);
 }
 
-WINDOW *create_newwin(int height, int width, int starty, int startx){
-    WINDOW *local_win;
-
-    local_win = newwin(height, width, starty, startx);
-    box(local_win, 0 , 0);
-    wrefresh(local_win);
-
-    return local_win;
-}
-
-void destroy_win(WINDOW *local_win){ 
-    box(local_win, ' ', ' '); 
-    wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
-    wrefresh(local_win);
-    delwin(local_win);
-}
-
-void filter_display(WINDOW *win, status *p){
+/*
+void filter_display(WINDOW *win, struct status_node *p){
     int y,x;
     if(p->filter_count > 0){
         for(int j = 0; j < p->filter_count; j++){
@@ -178,9 +166,10 @@ void filter_display(WINDOW *win, status *p){
     else
         waddstr(win,p->text);
 }
+*/
 
-int refresh_status_height(WINDOW *win,status *start,status *end){
-    status *p;
+int refresh_status_height(WINDOW *win,struct status_node *start,struct status_node *end){
+    struct status_node *p;
     for(p = start; p && p != end; p = p->next){
         wmove(win,0,0);
         show_status(win,p);
@@ -189,57 +178,70 @@ int refresh_status_height(WINDOW *win,status *start,status *end){
 }
 
 
-int show_status(WINDOW *win,status *p){
-    if(!p)
+int show_status(WINDOW *win,struct status_node *sn){
+    if(!sn)
         return -1;
     init_pair(5, COLOR_GREEN, COLOR_BLACK);
     wattron(win,COLOR_PAIR(5));
-    waddstr(win,p->composer->screen_name);
+    waddstr(win,sn->st->composer->screen_name);
     wattroff(win,COLOR_PAIR(5));
     waddch(win,'\n');
 
-    filter_display(win,p);
+    //waddwstr(win,sn->st->wtext);
+    if(sn->st->entity_count == 0)
+        waddwstr(win,sn->st->wtext);
+    else{
+        for(entity *et = sn->st->entities; et!=NULL; et=et->next){
+            if(et->type){
+                et->type->before_entity(win);
+                waddwstr(win,et->text);
+                et->type->after_entity(win);
+            }
+            else
+                waddwstr(win,et->text);
+        }
+    }
     int y,x;
     getyx(win,y,x);
-    p->y_max = y;
+    sn->y_max = y;
     waddch(win,'\n');
 
     return 0;
 }
 
-status *show_timeline(WINDOW *win, status *p,int height, int width){ 
-    if(!p)
+struct status_node *show_timeline(WINDOW *win, struct status_node *sn,int height, int width){ 
+    if(!sn)
         return 0;
 
     int y,x;
     wclear(win);
     wmove(win,0,0);
-    status *prev = NULL;
-    while(p){
+    struct status_node *prev = NULL;
+    while(sn){
         getyx(win,y,x);
-        p->y_min = y;
-        show_status(win,p);
+        sn->y_min = y;
+        show_status(win,sn);
 
-        if(p->y_max >= height-3)
+        if(sn->y_max >= height-3)
             break;
-        if(IS_SEPARATED(p->extra_info))
+        if(IS_SEPARATED(sn->st->extra_info))
             draw_border(win,'~');
         else
             draw_border(win,'-');
-        prev = p;
-        p = p->next;
+        prev = sn;
+        sn = sn->next;
     }
     wrefresh(win);
-    if(p)
-        return p;
+    if(sn)
+        return sn;
     else
         return prev;
 }
 
-int highlight_status(WINDOW *win, status *s){
-    if(!s)
+int highlight_status(WINDOW *win, struct status_node *sn){
+    if(!sn)
         return -1;
-    for(int line = s->y_min; line <= s->y_max; ++line){
+    for(int line = sn->y_min; line <= sn->y_max; ++line){
         wmove(win,line,0);
         wchgat(win,-1,A_REVERSE,0,NULL);
     }

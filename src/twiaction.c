@@ -36,16 +36,20 @@
 char home_api_base[] = "http://api.twitter.com/1/statuses/home_timeline.xml";
 char mention_api_base[] = "http://api.twitter.com/1/statuses/mentions.xml";
 char user_api_base[] = "http://api.twitter.com/1/statuses/user_timeline.xml";
+char showstatus_api_base[] = "http://api.twitter.com/1/statuses/show/";
 
 
 pthread_cond_t get_timeline_condition = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t get_timeline_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t get_status_condition = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t get_status_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 
 // Timeline types : 0 for home, 1 for mentions, 2 for user
 char *timeline_api_base[3] = {home_api_base, mention_api_base, user_api_base};
 
 char *fetch_timeline(int timeline_type, char *since_id, char *max_id, char *count){
-    int nr_params = 1;
+    int nr_params = 2;
     kvpair *params = NULL;
 
     if(since_id)
@@ -67,6 +71,9 @@ char *fetch_timeline(int timeline_type, char *since_id, char *max_id, char *coun
     }
     params[i].key = "count";
     params[i].value = count;
+    i++;
+    params[i].key = "include_entities";
+    params[i].value = "true";
     i++;
     char *result = oauth_get(timeline_api_base[timeline_type],params,nr_params);
     pthread_cond_signal(&get_timeline_condition);
@@ -116,4 +123,43 @@ char *get_timeline(int timeline_type, char *since_id, char *max_id, char *count)
     return (char *)result;
 }
 
+void *get_status_thread_func(void *arg){
+    if(!arg)
+        return NULL;
+    char *id = (char *)arg;
+    kvpair *params = malloc(sizeof(kvpair));
+    params[0].key = "include_entities";
+    params[0].value = "true";
 
+    char api_base[strlen(showstatus_api_base)+strlen(id)+5];
+    sprintf(api_base,"%s%s%s",showstatus_api_base,id,".xml");
+    char *result = oauth_get(api_base,params,1);
+    pthread_cond_signal(&get_timeline_condition);
+    return result;
+}
+
+char *get_status_by_id(char *id){
+    pthread_t get_status_thread;
+    int res = pthread_create(&get_status_thread,NULL,get_status_thread_func,(void *)id);
+    if(res){
+        SET_ERROR_NUMBER(ERROR_THREAD);
+        return NULL;
+    }
+
+    struct timespec abstime;
+    struct timeval tp;
+    gettimeofday(&tp,NULL);
+    abstime.tv_sec = tp.tv_sec;
+    abstime.tv_nsec = tp.tv_usec * 1000;
+    abstime.tv_sec += WAIT_SECONDS;
+    res = pthread_cond_timedwait(&get_status_condition,&get_status_mutex,&abstime);
+    if(res == ETIMEDOUT){
+        SET_ERROR_NUMBER(ERROR_NETWORK_CONNECTION);
+        pthread_cancel(get_status_thread);
+        return NULL;
+    }
+
+    void *result = NULL;
+    pthread_join(get_status_thread,&result);
+    return (char *)result;
+}

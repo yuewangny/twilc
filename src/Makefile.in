@@ -46,7 +46,7 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_twilc_OBJECTS = twiauth.$(OBJEXT) twiaction.$(OBJEXT) \
-	twiparse.$(OBJEXT) config.$(OBJEXT) filter.$(OBJEXT) \
+	twiparse.$(OBJEXT) config.$(OBJEXT) entity.$(OBJEXT) \
 	twitter.$(OBJEXT) ui.$(OBJEXT) twierror.$(OBJEXT) \
 	main.$(OBJEXT)
 twilc_OBJECTS = $(am_twilc_OBJECTS)
@@ -151,7 +151,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CXX_FLAGS = $(INIT_CFLAGS)
-twilc_SOURCES = twiauth.c twiaction.c twiparse.c config.c filter.c twitter.c ui.c twierror.c main.c
+twilc_SOURCES = twiauth.c twiaction.c twiparse.c config.c entity.c twitter.c ui.c twierror.c main.c
 twilc_LDADD = $(INIT_LIBS)
 all: all-am
 
@@ -235,7 +235,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/entity.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twiaction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twiauth.Po@am__quote@

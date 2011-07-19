@@ -29,19 +29,19 @@
 #include "config.h"
 #include "twiauth.h"
 #include "twiaction.h"
-#include "filter.h"
+#include "entity.h"
 #include "twiparse.h"
 #include "ui.h"
 #include "twierror.h"
 
-int move_next_page(WINDOW *win, status *page_start, int direction){
+int move_next_page(WINDOW *win, struct status_node *page_start, int direction){
     if(!page_start){
         SET_ERROR_NUMBER(ERROR_PAGE_START);
         return -1;
     }
 
-    status *top = 0;
-    status *bottom = 0;
+    struct status_node *top = 0;
+    struct status_node *bottom = 0;
     int y,x;
 
     getmaxyx(win,y,x);
@@ -49,7 +49,7 @@ int move_next_page(WINDOW *win, status *page_start, int direction){
         top = page_start;
     }
     else{
-        status *p = page_start;
+        struct status_node *p = page_start;
         int topy = y;
         while(p){
             topy -= p->y_max - p->y_min + 2;
@@ -66,24 +66,24 @@ int move_next_page(WINDOW *win, status *page_start, int direction){
     wclear(win);
     bottom = show_timeline(win,top,y,x);
 
-    current_top_status[current_tl_index] = top;
-    current_bottom_status[current_tl_index] = bottom;
+    timelines[current_tl_index]->current_top = top;
+    timelines[current_tl_index]->current_bottom = bottom;
     return 0;
 }
 
-void move_next(WINDOW *win, status *current, int direction){
+void move_next(WINDOW *win, struct status_node *current, int direction){
     if(!current)
         return;
 
-    status *next = 0;
-    status *boundary = 0;
+    struct status_node *next = 0;
+    struct status_node *boundary = 0;
     if(direction > 0){
         next = current->next;
-        boundary = current_bottom_status[current_tl_index];
+        boundary = timelines[current_tl_index]->current_bottom;
     }
     else{
         next = current->prev;
-        boundary = current_top_status[current_tl_index];
+        boundary = timelines[current_tl_index]->current_top;
     }
     if(!next){  // reached the bottom
         if(direction > 0)
@@ -101,20 +101,20 @@ void move_next(WINDOW *win, status *current, int direction){
         move_next_page(win,current,direction);
 
     highlight_status(win,next);
-    current_status[current_tl_index] = next;
+    timelines[current_tl_index]->current = next;
 }
 
 void move_top(WINDOW *win){
-    status *top = timelines[current_tl_index]->head;
+    struct status_node *top = timelines[current_tl_index]->head;
     if(!top)
         return;
 
     int y,x;
     getmaxyx(win,y,x);
-    status *bottom = show_timeline(win,top,y,x);
-    current_status[current_tl_index] = top;
-    current_top_status[current_tl_index] = top;
-    current_bottom_status[current_tl_index] = bottom;
+    struct status_node *bottom = show_timeline(win,top,y,x);
+    timelines[current_tl_index]->current = top;
+    timelines[current_tl_index]->current_top = top;
+    timelines[current_tl_index]->current_bottom = bottom;
     highlight_status(win,top);
 }
 
@@ -139,7 +139,8 @@ void move_top(WINDOW *win){
  * o --
  * p --
  * q -- quit
- * r -- reply to a tweet
+ * r -- reply
+ * R -- reply to all
  * s -- search
  * t -- retweet
  * u --
@@ -162,9 +163,9 @@ void wait_command(WINDOW *win){
             case 'J':
                 // move down one page
                 notify_state_change(states[STATE_NORMAL]);
-                if(move_next_page(win,current_bottom_status[current_tl_index],1) != -1){
-                    current_status[current_tl_index] = current_top_status[current_tl_index];
-                    highlight_status(win, current_status[current_tl_index]);
+                if(move_next_page(win,timelines[current_tl_index]->current_bottom,1) != -1){
+                    timelines[current_tl_index]->current = timelines[current_tl_index]->current_top;
+                    highlight_status(win, timelines[current_tl_index]->current);
                 }
                 else
                     notify_error_state();
@@ -172,9 +173,9 @@ void wait_command(WINDOW *win){
             case 'K':
                 // move up one page
                 notify_state_change(states[STATE_NORMAL]);
-                if(move_next_page(win,current_top_status[current_tl_index],-1)!= -1){
-                    current_status[current_tl_index] = current_top_status[current_tl_index];
-                    highlight_status(win, current_status[current_tl_index]);
+                if(move_next_page(win,timelines[current_tl_index]->current_top,-1)!= -1){
+                    timelines[current_tl_index]->current = timelines[current_tl_index]->current_top;
+                    highlight_status(win, timelines[current_tl_index]->current);
                 }
                 else
                     notify_error_state();
@@ -182,17 +183,17 @@ void wait_command(WINDOW *win){
             case 'j':
                 // move down one tweet
                 notify_state_change(states[STATE_NORMAL]);
-                move_next(win, current_status[current_tl_index],1);
+                move_next(win, timelines[current_tl_index]->current,1);
                 break;
             case 'k':
                 // move up one tweet
                 notify_state_change(states[STATE_NORMAL]);
-                move_next(win, current_status[current_tl_index],-1);
+                move_next(win, timelines[current_tl_index]->current,-1);
                 break;
             case '.':
                 // refresh the current timeline
                 notify_state_change(states[STATE_RETRIEVING_UPDATES]);
-                status *to_status = timelines[current_tl_index]->head;
+                struct status_node *to_status = timelines[current_tl_index]->head;
                 int res = update_timeline(current_tl_index,NULL,to_status);
                 if(res >= 0){
                     char *state_str = malloc(20*sizeof(char));
@@ -209,18 +210,18 @@ void wait_command(WINDOW *win){
                 else
                     notify_error_state();
 
-                last_viewed_status[current_tl_index] = current_status[current_tl_index];
+                timelines[current_tl_index]->last_viewed = timelines[current_tl_index]->current;
                 move_top(win);
                 break;
             case 'v':
                 notify_state_change(states[STATE_NORMAL]);
-                if(last_viewed_status[current_tl_index]){
+                if(timelines[current_tl_index]->last_viewed){
                     int y,x;
-                    status *last_viewed = last_viewed_status[current_tl_index];
+                    struct status_node *last_viewed = timelines[current_tl_index]->last_viewed;
                     getmaxyx(win,y,x);
-                    current_status[current_tl_index] = last_viewed;
-                    current_top_status[current_tl_index] = last_viewed;
-                    current_bottom_status[current_tl_index] = show_timeline(win,last_viewed,y,x);
+                    timelines[current_tl_index]->current = last_viewed;
+                    timelines[current_tl_index]->current_top = last_viewed;
+                    timelines[current_tl_index]->current_bottom = show_timeline(win,last_viewed,y,x);
                     highlight_status(win,last_viewed);
                 }
                 else
@@ -241,6 +242,8 @@ int destroy_mutex(){
 }
 
 int main(){
+    setlocale(LC_ALL,"");
+
     clit_config *config = malloc(sizeof(clit_config));
     if(parse_config(config) == -1){
         // first run
@@ -255,7 +258,6 @@ int main(){
     }
 
     init_oauth(config->key,config->secret);
-    create_filters();
     printf("Loading the timelines....\n");
     if(init_timelines() == -1){
         pthread_mutex_lock(&error_mutex);
@@ -265,7 +267,6 @@ int main(){
     }
     init_mutex();
 
-    setlocale(LC_ALL,"");
     initscr();
     curs_set(0);
 
@@ -290,7 +291,6 @@ exit_twilc:
     destroy_ui();
     curs_set(1);
     endwin(); 
-    destroy_filters();
     destroy_mutex();
     for(int i = 0; i < TIMELINE_COUNT; ++i)
         destroy_timeline(timelines[i]);

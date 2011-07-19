@@ -35,5 +35,6 @@ typedef struct {
 
 
 char *get_timeline(int timeline_type, char *since_id,char *max_id,char *count);
+char *get_status_by_id(char *id);
 
 #endif

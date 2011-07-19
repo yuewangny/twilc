@@ -19,23 +19,37 @@
  **/
 
 
-#ifndef FILTER_H
-#define FILTER_H
+#ifndef ENTITY_H 
+#define ENTITY_H 
 
-#define FILTER_NUM 4 
+#define ENTITY_TYPE_NUM 3 
 
+#include <stdint.h>
 #include <ncurses.h>
+#include <wchar.h>
 
-typedef struct filter{
-    char *pattern;
-    char *(*get_pattern_end)(char *);
-    void (*before_filter)(WINDOW *);
-    void (*after_filter)(WINDOW *);
-} display_filter;
+typedef struct {
+    void (*before_entity)(WINDOW *);
+    void (*after_entity)(WINDOW *);
+    void (*entity_action)(void);
+} entity_type;
 
-display_filter *filters[FILTER_NUM];
+// entity
+typedef struct entity_struct{
+    entity_type *type;
+    wchar_t *text;
+    uint8_t start;
+    uint8_t end;
+    void *data;
 
-void create_filters();
-void destroy_filters();
+    struct entity_struct *next;
+} entity;
+
+entity_type *ENTITY_TYPE_MENTION;
+entity_type *ENTITY_TYPE_URL;
+entity_type *ENTITY_TYPE_HASHTAG;
+
+void init_entity_types();
+int destroy_entity(entity *);
 
 #endif

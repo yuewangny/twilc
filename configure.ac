@@ -18,6 +18,7 @@ AC_CHECK_LIB([xml2], [xmlDocGetRootElement], ,AC_ERROR(libxml2 not found))
 AC_CHECK_LIB([z], [gzread], ,AC_ERROR(zlib not found))
 AC_CHECK_LIB([curl],[curl_global_init], ,AC_ERROR(libcurl not found))
 AC_CHECK_LIB([pthread],[pthread_mutex_init], , AC_ERROR(pthread not found))
+AC_CHECK_LIB([glib-2.0],[g_hash_table_lookup], , AC_ERROR(glib-2.0 not found))
 
 # Checks for header files.
 AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
@@ -45,7 +46,7 @@ if test "x$XML2_INCLUDE" = "x"; then
     LDFLAGS="$old_LDFLAGS $XML2_INCLUDE"
 fi
 # We need c99
-CFLAGS="$CFLAGS -std=gnu99"
+CFLAGS="$CFLAGS -std=gnu99 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
 
 # Checks for typedefs, structures, and compiler characteristics.
 

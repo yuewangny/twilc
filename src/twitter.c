@@ -23,11 +23,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libxml/parser.h>
+#include <glib.h>
+#include <wchar.h>
 
 #include "twiauth.h"
 #include "config.h"
 #include "twitter.h"
-#include "filter.h"
+#include "entity.h"
 #include "twiparse.h"
 #include "twiaction.h"
 #include "ui.h"
@@ -38,13 +40,32 @@
 
 #define DEFAUTL_REFRESH_COUNT "50"
 #define DEFAULT_LOAD_COUNT "200"
+#define STATUS_MAX_NUM 2000
+
+
+int char2wchar(wchar_t *deststr,char *srcstr){
+    if(!deststr)
+        return -1;
+    mbtowc((wchar_t *)NULL, NULL, 0);
+
+    *deststr = '\0';
+    while(*srcstr != '\0'){
+        int mbclen = mbtowc(deststr, srcstr, MB_LEN_MAX);
+        if(mbclen < 0)
+            return -1;
+        srcstr += mbclen;
+        wprintf(L"==%c==",*deststr);
+        deststr ++;
+    }
+    *deststr = '\0';
+
+    return 0;
+}
 
 status *newgapstatus(){
     status *s = newstatus();
     s->id = GAP_STATUS_ID;
-    s->text = GAP_STATUS_TEXT;
-    s->filter_count = 0;
-
+    s->wtext = L"GAP";
     return s;
 }
 
@@ -52,6 +73,10 @@ user *newuser(){
     user *usr = malloc(sizeof(user));
     usr->id = 0;
     usr->screen_name = 0;
+    usr->name = 0;
+    usr->location = 0;
+    usr->url = 0;
+    usr->bio = 0;
     return usr;
 }
 
@@ -59,34 +84,129 @@ status *newstatus(){
     status *s = malloc(sizeof(status));
     s->id = 0;
     s->composer = 0;
-    s->retweeter = 0;
+    s->retweeted_status = 0;
     s->extra_info = 0;
-    s->text = 0;
-    s->prev = 0;
-    s->next = 0;
-    s->y_min = -1;
-    s->y_max = -1;
+    s->wtext = 0;
+    s->length = 0;
+    s->in_reply_to_status_id = 0;
+    s->conversation = 0;
+
+    s->entities = 0;
+    s->entity_count = 0;
     return s;
+}
+
+struct status_node *newstatusnode(status *st){
+    struct status_node *sn = malloc(sizeof(struct status_node));
+    if(!sn){
+        SET_ERROR_NUMBER(ERROR_MALLOC);
+        return NULL;
+    }
+    sn->prev = 0;
+    sn->next = 0;
+
+    sn->y_min = -1;
+    sn->y_max = -1;
+    sn->st = st;
+
+    return sn;
+}
+
+int destroy_statusnode(struct status_node *sn){
+    free(sn);
+}
+
+void split_status_entities(status *st){
+    if(st->entity_count == 0){
+        return;
+    }
+    entity *entities = st->entities;
+    entity *flag[st->length+1];
+    memset(flag,0,(st->length+1)*sizeof(entity *));
+
+    for(entity *e = entities; e!=NULL; e=e->next){
+        flag[e->start] = e;
+        flag[e->end] = e;
+    }
+    int i = 0, j;
+    entity *et = NULL;
+    for(j = i+1; j <= st->length; j++){
+        if(flag[j] || j == st->length){
+            entity *tmp =NULL;
+            if(flag[j] != flag[i]){
+                tmp = newentity();
+                tmp->text = malloc((j-i+1)*sizeof(wchar_t));
+                memcpy(tmp->text,st->wtext+i,(j-i)*sizeof(wchar_t));
+                tmp->text[j-i] = '\0';
+                tmp->start = i;
+                tmp->end = j;
+                tmp->type = NULL;
+            }
+            else
+                tmp = flag[j];
+            if(et){
+                et->next = tmp;
+                et = et->next;
+            }
+            else{
+                et = tmp;
+                st->entities = et;
+            }
+            i = j;
+        }
+    }
+    et->next = NULL;
+
+    for(entity *et=st->entities;et;et=et->next)
+        printf("%ls\n",et->text);
 }
 
 statuses *newtimeline(){
     statuses *tl = malloc(sizeof(statuses));
     tl->head = 0;
     tl->count = 0;
+    tl->current = 0;
+    tl->current_top = 0;
+    tl->current_bottom = 0;
+    tl->separate = 0;
+    tl->last_viewed = 0;
     return tl;
 }
 
-int update_timeline(int tl_index, status *from_status, status *to_status){
+/*
+int load_conversation(struct status_node *sn){
+    status *in_reply_to_status;
+    while(sn->st->in_reply_to_status_id){
+        status *s = sn->st;
+        if(!s->conversation){
+            pthread_mutex_lock(&status_map_mutex);
+            in_reply_to_status = g_hash_table_lookup(s->in_reply_to_status_id);
+            pthread_mutex_unlock(&status_map_mutex);
+            if(!in_reply_to_status){
+                in_reply_to_status = parse_single_status(get_single_status(s->in_reply_to_status_id));
+            }
+            if(!in_reply_to_status){
+                break;
+            }
+            struct status_node *conversation = newstatusnode(in_reply_to_status);
+        }
+        sn = (struct status_node *)(s->conversation);
+    }
+    return 0;
+}
+*/
+
+int update_timeline(int tl_index, struct status_node *from_status, struct status_node *to_status){
     char *since_id = 0;
     char *max_id = 0;
 
     if(from_status)
-        max_id = from_status->id;
+        max_id = from_status->st->id;
     if(to_status){
         if(to_status->next)
-            since_id = to_status->next->id;
+            since_id = to_status->next->st->id;
         else
-            since_id = to_status->id;
+            since_id = to_status->st->id;
     }
     char *tmpfile;
     tmpfile = get_timeline(tl_index,since_id,max_id,DEFAUTL_REFRESH_COUNT);
@@ -100,6 +220,7 @@ int update_timeline(int tl_index, status *from_status, status *to_status){
 }
 
 int init_timelines(){
+    init_entity_types();
     for(int i = 0; i < TIMELINE_COUNT; ++i){
         timelines[i] = newtimeline();
     }
@@ -109,9 +230,13 @@ int init_timelines(){
         return -1;
     load_timeline(tmpfile,home,NULL,NULL);
     remove(tmpfile);
-    current_status[0] = timelines[0]->head;
-    current_top_status[0] = timelines[0]->head;
-    last_viewed_status[0] = NULL;
+    home->current = home->head;
+    home->current_top = home->head;
+    home->last_viewed = NULL;
+
+    /*
+     * status_map = g_hash_table_new(g_str_hash,strcmp);
+     */
 
     current_tl_index = 0;
 
@@ -121,11 +246,11 @@ int init_timelines(){
 int destroy_timeline(statuses *tl){
     if(!tl)
         return 0;
-    status *p = tl->head;
+    struct status_node *p = tl->head;
     while(p){
-        status *tmp = p;
+        struct status_node *tmp = p;
         p = p->next;
-        destroy_status(tmp);
+        free(tmp);
     }
     free(tl);
     return 0;
@@ -135,20 +260,40 @@ int destroy_user(user *usr){
     if(usr){
         if(usr->id)free(usr->id);
         if(usr->screen_name)free(usr->screen_name);
+        if(usr->url)free(usr->url);
+        if(usr->bio)free(usr->bio);
+        if(usr->location)free(usr->location);
         free(usr);
     }
     return 0;
 }
+
+
+/*
+int destroy_conversation(struct status_node* conv){
+    while(conv){
+        struct status_node *tmp = conv;
+        conv = conv->next;
+        free(tmp);
+    }
+    return 0;
+}
+*/
 
 int destroy_status(status *s){
     if(!s)
         return 0;
     if(s->id){
         free(s->id);
-        for(int i=0;i<s->filter_count;i++)
-            free(s->filtered_text[i]);
-        destroy_user(s->composer);
-        destroy_user(s->retweeter);
+        free(s->wtext);
+        if(s->in_reply_to_status_id)
+            free(s->in_reply_to_status_id);
+        /*
+        if(s->conversation)
+            destroy_conversation((struct status_node*)conversation);
+        */
+        for(entity *et=s->entities;et;et=et->next)
+            destroy_entity(et);
     }
     free(s);
     return 0;
@@ -171,95 +316,28 @@ int authorize(clit_config *config){
     }
 }
 
-void filter_status_text(status *s){
-    if(!s)
-        return;
-
-    display_filter *current_filter;
-    char **filtered_text = s->filtered_text;
-    display_filter **filter_list = s->filter_list;
-
-    int i = 0;
-    char *begin = NULL;
-    for(int k=0;k<FILTER_NUM;++k){
-        char *temp = strstr(s->text,filters[k]->pattern);
-        if(temp && (!begin || (begin && temp < begin))){
-            begin = temp;
-            current_filter = filters[k];
-        }
-    }
-
-    char *end = s->text;
-    char *prev = s->text;
-    while(begin){
-        prev = end;
-        end = current_filter->get_pattern_end(begin);
-        if(end == 0)
-            break;
-
-        int len = begin - prev;
-        if(len > 0){
-            filtered_text[i] = malloc((len + 1)*sizeof(char));
-            strncpy(filtered_text[i],prev,len);
-            filtered_text[i][len] = '\0';
-            filter_list[i] = 0;
-            i++;
-        }
-
-        len = end - begin;
-        filtered_text[i] = malloc((len + 1)*sizeof(char));
-        strncpy(filtered_text[i],begin,len);
-        filtered_text[i][len] = '\0';
-        filter_list[i] = current_filter;
-        i++;
-
-        begin = NULL;
-        for(int k=0;k<FILTER_NUM;++k){
-            char *temp = strstr(end,filters[k]->pattern);
-            if(temp && (!begin || (begin && temp < begin))){
-                begin = temp;
-                current_filter = filters[k];
-            }
-        }
-    }
-    if(end)
-        prev = end;
-    if((*prev) != '\0'){
-        filtered_text[i] = malloc((strlen(prev)+1)*sizeof(char));
-        strcpy(filtered_text[i],prev);
-        filter_list[i] = 0;
-        i ++;
-    }
-    s->filter_count = i;
-
-    for(int i=0;i<s->filter_count;++i)
-        if(filtered_text[i][0] == '@' && strcmp(filtered_text[i]+1,s->composer->screen_name) == 0){
-            SET_MENTIONED(s->extra_info);
-            break;
-        }
-}
-
-int change_separate_status(status *newsep){
-    status *s = separate_status[current_tl_index];
+int change_separate_status(struct status_node *newsep){
+    struct status_node *s = timelines[current_tl_index]->separate;
     if(s)
-        UNSET_SEPARATED(s->extra_info);
-    separate_status[current_tl_index] = newsep;
-    SET_SEPARATED(newsep->extra_info);
+        UNSET_SEPARATED(s->st->extra_info);
+    timelines[current_tl_index]->separate = newsep;
+    SET_SEPARATED(newsep->st->extra_info);
 }
 
 /*
  * Merge new tweets with current timeline.
  */
-int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_status){
+int load_timeline(char *tmpfile, statuses *tl, struct status_node *from_status, struct status_node *to_status){
     LIBXML_TEST_VERSION
     statuses *toptweets = newtimeline();
 
     if(parse_timeline(tmpfile,toptweets) < 0)
         return -1;
 
-    for(status *s = toptweets->head; s; s = s->next){
-        filter_status_text(s);
-    }
+    /*
+    for(struct status_node *s = toptweets->head; s; s = s->next)
+        get_status_entities(s->st);
+        */
 
     if(!(toptweets->head) || toptweets->count == 0)
         return 0;
@@ -271,15 +349,15 @@ int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_s
     }
     else{
         int nr_newtweets = 0;
-        status *top = toptweets->head;
-        status *oldtop = to_status;
+        struct status_node *top = toptweets->head;
+        struct status_node *oldtop = to_status;
         if(oldtop){
-            if(strcmp(top->id,oldtop->id) <= 0)
+            if(strcmp(top->st->id,oldtop->st->id) <= 0)
                 return 0;
 
-            status *prev = top->prev;
+            struct status_node *prev = top->prev;
             while(top){
-                int result = strcmp(top->id,oldtop->id);
+                int result = strcmp(top->st->id,oldtop->st->id);
                 if(result > 0){ // new tweet
                     prev = top;
                     top = top->next;
@@ -299,7 +377,7 @@ int load_timeline(char *tmpfile, statuses *tl, status *from_status, status *to_s
 
             // Gap between new and old tweets
             if(!top){
-                status *gap = newgapstatus();
+                struct status_node *gap = newstatusnode(newgapstatus());
                 prev->next = gap;
                 gap->prev = prev;
                 gap->next = oldtop;

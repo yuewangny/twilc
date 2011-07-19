@@ -23,24 +23,21 @@
 #define UI_H
 
 #include <ncurses.h>
+#include <stdint.h>
 
 #include "twitter.h"
 
-WINDOW *create_newwin(int height, int width, int starty, int startx);
+int show_status(WINDOW *win, struct status_node *sn);
 
-void destroy_win(WINDOW *local_win);
+struct status_node *show_timeline(WINDOW *win, struct status_node *sn, int height, int width);
 
-int show_status(WINDOW *win, status *s);
-
-status *show_timeline(WINDOW *win, status *s, int height, int width);
-
-int highlight_status(WINDOW *win, status *s);
+int highlight_status(WINDOW *win, struct status_node *sn);
 
 int init_ui();
 int destroy_ui();
 int notify_error_state();
 int notify_state_change(const char *);
-int refresh_status_height(WINDOW *,status *,status *);
+int refresh_status_height(WINDOW *,struct status_node *,struct status_node *);
 
 WINDOW *title_win;
 WINDOW *tl_win;
