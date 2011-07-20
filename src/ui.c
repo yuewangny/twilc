@@ -237,11 +237,14 @@ int input_new_tweet(WINDOW *win, wchar_t *newtext){
     wclear(win);
     wrefresh(win);
     wmove(win,0,0);
-    waddwstr(win);
+    waddwstr(win,newtext);
 
     int count = wcslen(newtext);
+    newtext += count;
     int y,x;
     char count_state[8] = "";
+    sprintf(count_state,"%3d/%d",count,TWEET_MAX_LEN);
+    notify_state_change(count_state);
 
     keypad(win,TRUE);
     echo();
@@ -274,10 +277,10 @@ int input_new_tweet(WINDOW *win, wchar_t *newtext){
         }
         wrefresh(win);
         sprintf(count_state,"%3d/%d",count,TWEET_MAX_LEN);
-
         notify_state_change(count_state);
     }
 
     curs_set(0);
+    noecho();
     return count;
 }

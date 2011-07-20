@@ -135,10 +135,10 @@ int compose_new_tweet(WINDOW *win,status *in_reply_to, int if_reply_to_all){
         if(in_reply_to->retweeted_status)
             in_reply_to = in_reply_to->retweeted_status;
         wchar_t *ptr = newtext;
-        mbstowcs(ptr,me->screen_name,strlen(me->screen_name));
+        *ptr ++ = '@';
+        mbstowcs(ptr,in_reply_to->composer->screen_name,strlen(in_reply_to->composer->screen_name));
         ptr += wcslen(ptr);
-        *ptr = ' ';
-        ++ ptr;
+        *ptr ++ = ' ';
         if(if_reply_to_all)
             for(entity *et = in_reply_to->entities; et; et = et->next){
                 if(et->type == ENTITY_TYPE_MENTION){
@@ -151,16 +151,13 @@ int compose_new_tweet(WINDOW *win,status *in_reply_to, int if_reply_to_all){
     }
     int count = input_new_tweet(win,newtext);
     if(count > 0){
-        /*
-        waddstr(win,"\n");
-        waddwstr(win,newtext);
-        wrefresh(win);
-        */
-
-        char text[140];
-        wcstombs(text,newtext,141);
+        char text[TWEET_MAX_LEN * 4];
+        char *in_reply_to_status_id = NULL;
+        if(in_reply_to)
+            in_reply_to_status_id = in_reply_to->id;
+        wcstombs(text,newtext,TWEET_MAX_LEN * 4);
         notify_state_change("Sending......");
-        update_status(text,NULL);
+        update_status(text,in_reply_to_status_id);
         notify_state_change("Successfully updated.");
     }
     else
@@ -281,6 +278,10 @@ void wait_command(WINDOW *win){
                 }
                 else
                     notify_state_change(states[STATE_NO_LAST_VIEWED]);
+                break;
+            case 'r':
+                compose_new_tweet(win,timelines[current_tl_index]->current->st,0);
+                return_to_current_timeline(win);
                 break;
         }
     }
