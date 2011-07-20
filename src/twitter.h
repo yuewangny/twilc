@@ -50,6 +50,7 @@ typedef struct {
 
 
 #define TWEET_MAX_LEN 140
+#define ID_MAX_LEN 15
 
 // status
 typedef struct status_str{

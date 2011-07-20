@@ -139,15 +139,18 @@ int compose_new_tweet(WINDOW *win,status *in_reply_to, int if_reply_to_all){
         mbstowcs(ptr,in_reply_to->composer->screen_name,strlen(in_reply_to->composer->screen_name));
         ptr += wcslen(ptr);
         *ptr ++ = ' ';
-        if(if_reply_to_all)
+        if(if_reply_to_all){
+            wchar_t wscreenname[ID_MAX_LEN+2];
+            wscreenname[0] = '@';
+            mbstowcs(wscreenname+1,me->screen_name,ID_MAX_LEN+1);
             for(entity *et = in_reply_to->entities; et; et = et->next){
-                if(et->type == ENTITY_TYPE_MENTION){
+                if(et->type == ENTITY_TYPE_MENTION && wcscmp(et->text,wscreenname)){
                     wcscpy(ptr,et->text);
                     ptr += wcslen(ptr);
-                    *ptr = ' ';
-                    ++ ptr;
+                    *ptr++ = ' ';
                 }
             }
+        }
     }
     int count = input_new_tweet(win,newtext);
     if(count > 0){
@@ -281,6 +284,10 @@ void wait_command(WINDOW *win){
                 break;
             case 'r':
                 compose_new_tweet(win,timelines[current_tl_index]->current->st,0);
+                return_to_current_timeline(win);
+                break;
+            case 'R':
+                compose_new_tweet(win,timelines[current_tl_index]->current->st,1);
                 return_to_current_timeline(win);
                 break;
         }
