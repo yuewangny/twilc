@@ -157,8 +157,6 @@ void split_status_entities(status *st){
     }
     et->next = NULL;
 
-    for(entity *et=st->entities;et;et=et->next)
-        printf("%ls\n",et->text);
 }
 
 statuses *newtimeline(){

@@ -20,6 +20,11 @@ AC_CHECK_LIB([curl],[curl_global_init], ,AC_ERROR(libcurl not found))
 AC_CHECK_LIB([pthread],[pthread_mutex_init], , AC_ERROR(pthread not found))
 AC_CHECK_LIB([glib-2.0],[g_hash_table_lookup], , AC_ERROR(glib-2.0 not found))
 
+AC_PROG_CC_C99
+if test "x$ac_cv_prog_cc_c99" = xno; then
+    AC_MSG_ERROR([You need a compiler that supports c99])
+fi
+
 # Checks for header files.
 AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
 
@@ -34,7 +39,7 @@ AC_TRY_COMPILE([#include <libxml/xmlmemory.h>], [int a = 1;],
 if test "x$XML2_INCLUDE" = "x"; then
     old_LDFLAGS="$LDFLAGS"
     for i in $xml2_include_dir /usr/include /usr/local/include /usr/include/libxml2 /usr/local/include/libxml2 ; do
-        CPPFLAGS="$old_LDFLAGS -I$i"
+        CFLAGS="$old_LDFLAGS -I$i"
         AC_TRY_COMPILE([#include <libxml/xmlmemory.h>], [int a = 1;],
             XML2_INCLUDE="-I$i",
             XML2_INCLUDE=
@@ -45,6 +50,7 @@ if test "x$XML2_INCLUDE" = "x"; then
     done
     LDFLAGS="$old_LDFLAGS $XML2_INCLUDE"
 fi
+
 # We need c99
 CFLAGS="$CFLAGS -std=gnu99 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
 

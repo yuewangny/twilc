@@ -165,7 +165,6 @@ int parse_mention_entity(xmlDocPtr *doc, xmlNode *node, entity **ent, status *st
     (*ent)->text[end-start] = '\0';
     (*ent)->start = start;
     (*ent)->end = end;
-    wprintf(L"%ls\n",(*ent)->text);
     return 0;
 }
 
@@ -210,7 +209,6 @@ int parse_hashtag_entity(xmlDocPtr *doc, xmlNode *node, entity **ent, status *st
     (*ent)->data = NULL;
     int start = atoi((char *)xmlGetProp(node,"start"));
     int end = atoi((char *)xmlGetProp(node,"end"));
-    printf("start:%d,end:%d\n",start,end);
     (*ent)->text = malloc((end-start+1)*sizeof(wchar_t));
     memcpy((*ent)->text,st->wtext+start,(end-start)*sizeof(wchar_t));
     (*ent)->text[end-start] = '\0';
@@ -325,11 +323,13 @@ int parse_status(xmlDocPtr *doc, xmlNode *node, status **stptr){
         }
         */
         else if(!xmlStrcmp(attr->name,(const xmlChar *)"retweeted_status")){
-            st->retweeted_status = newstatus();
             parse_status(doc,attr,&(st->retweeted_status));
+            /*
+            for(entity *et=st->retweeted_status->entities;et;et=et->next)
+                printf("%ls\n",et->text);
+                */
         }
         else if(!xmlStrcmp(attr->name,(const xmlChar *)"entities")){
-            //printf("status:%s\n",st->text);
             parse_entities(doc,attr,st);
         }
         attr = attr->next;

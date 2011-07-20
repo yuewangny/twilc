@@ -181,17 +181,21 @@ int refresh_status_height(WINDOW *win,struct status_node *start,struct status_no
 int show_status(WINDOW *win,struct status_node *sn){
     if(!sn)
         return -1;
+    status *st = sn->st; 
+    if(sn->st->retweeted_status) 
+        st = sn->st->retweeted_status;
+
     init_pair(5, COLOR_GREEN, COLOR_BLACK);
     wattron(win,COLOR_PAIR(5));
-    waddstr(win,sn->st->composer->screen_name);
+    waddstr(win,st->composer->screen_name);
     wattroff(win,COLOR_PAIR(5));
     waddch(win,'\n');
 
-    //waddwstr(win,sn->st->wtext);
-    if(sn->st->entity_count == 0)
-        waddwstr(win,sn->st->wtext);
+    //waddwstr(win,st->wtext);
+    if(st->entity_count == 0)
+        waddwstr(win,st->wtext);
     else{
-        for(entity *et = sn->st->entities; et!=NULL; et=et->next){
+        for(entity *et = st->entities; et!=NULL; et=et->next){
             if(et->type){
                 et->type->before_entity(win);
                 waddwstr(win,et->text);
