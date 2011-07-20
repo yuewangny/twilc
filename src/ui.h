@@ -24,6 +24,7 @@
 
 #include <ncurses.h>
 #include <stdint.h>
+#include <wchar.h>
 
 #include "twitter.h"
 
@@ -38,6 +39,7 @@ int destroy_ui();
 int notify_error_state();
 int notify_state_change(const char *);
 int refresh_status_height(WINDOW *,struct status_node *,struct status_node *);
+int input_new_tweet(WINDOW *,wchar_t*);
 
 WINDOW *title_win;
 WINDOW *tl_win;

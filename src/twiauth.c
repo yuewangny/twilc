@@ -163,7 +163,7 @@ char *http_get(char *url){
     return TEMP_FILE;
 }
 
-char *oauth_get(const char *api_base, kvpair *params, int nr_param){
+char *oauth_get(const char *api_base, kvpair *params, int nr_param, int get_or_post){
     char *call_url = 0;
     char *req_url = 0;
 
@@ -185,9 +185,17 @@ char *oauth_get(const char *api_base, kvpair *params, int nr_param){
         strcat(call_url,params[i].value);
     }
 
-    req_url = oauth_sign_url2(call_url ,NULL,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
-    //char *fn = oauth_http_get(req_url, arg);
-    char *fn = http_get(req_url);
+    char *fn = NULL;
+    if(get_or_post == GET){
+        req_url = oauth_sign_url2(call_url ,NULL,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
+        //char *fn = oauth_http_get(req_url, arg);
+        fn = http_get(req_url);
+    }
+    else{
+        char *postarg;
+        req_url = oauth_sign_url2(call_url ,&postarg,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
+        oauth_http_post(req_url,postarg);
+    }
 
     free(call_url);
     free(req_url);

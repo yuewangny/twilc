@@ -128,6 +128,7 @@ pthread_mutex_t status_map_mutex;
 GHashTable *user_map;
 pthread_mutex_t user_map_mutex;
 
+user *me;
 // the index of current displaying timeline
 int current_tl_index;
 
@@ -136,7 +137,6 @@ int update_timeline(int tl_index, struct status_node *from_status, struct status
 int load_timeline(char *tmpfile, statuses *tl,struct status_node *from,struct status_node *to);
 void build_status_entities(status *s);
 
-int char2wchar(wchar_t *deststr,char *srcstr);
 
 user *newuser();
 entity *newentity();

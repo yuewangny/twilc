@@ -33,11 +33,12 @@
 
 #define WAIT_SECONDS 20
 
-char home_api_base[] = "http://api.twitter.com/1/statuses/home_timeline.xml";
-char mention_api_base[] = "http://api.twitter.com/1/statuses/mentions.xml";
-char user_api_base[] = "http://api.twitter.com/1/statuses/user_timeline.xml";
-char showstatus_api_base[] = "http://api.twitter.com/1/statuses/show/";
+char home_api_base[] = "https://api.twitter.com/1/statuses/home_timeline.xml";
+char mention_api_base[] = "https://api.twitter.com/1/statuses/mentions.xml";
+char user_api_base[] = "https://api.twitter.com/1/statuses/user_timeline.xml";
+char showstatus_api_base[] = "https://api.twitter.com/1/statuses/show/";
 
+char update_api_base[] = "https://api.twitter.com/1/statuses/update.xml";
 
 pthread_cond_t get_timeline_condition = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t get_timeline_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -47,6 +48,24 @@ pthread_mutex_t get_status_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Timeline types : 0 for home, 1 for mentions, 2 for user
 char *timeline_api_base[3] = {home_api_base, mention_api_base, user_api_base};
+
+char *update_status(char *text, char *in_reply_to_id){
+    if(!text)
+        return NULL;
+    int nr_params = in_reply_to_id? 2:1;
+    kvpair *params = NULL;
+
+    params = malloc(nr_params*sizeof(kvpair));
+    params[0].key = "status";
+    params[0].value = text;
+
+    if(in_reply_to_id){
+        params[1].key = "in_reply_to_status_id";
+        params[1].value = in_reply_to_id;
+    }
+    char *result = oauth_get(update_api_base,params,nr_params,POST);
+    return result;
+}
 
 char *fetch_timeline(int timeline_type, char *since_id, char *max_id, char *count){
     int nr_params = 2;
@@ -75,7 +94,7 @@ char *fetch_timeline(int timeline_type, char *since_id, char *max_id, char *coun
     params[i].key = "include_entities";
     params[i].value = "true";
     i++;
-    char *result = oauth_get(timeline_api_base[timeline_type],params,nr_params);
+    char *result = oauth_get(timeline_api_base[timeline_type],params,nr_params,GET);
     pthread_cond_signal(&get_timeline_condition);
     return result;
 }
@@ -133,7 +152,7 @@ void *get_status_thread_func(void *arg){
 
     char api_base[strlen(showstatus_api_base)+strlen(id)+5];
     sprintf(api_base,"%s%s%s",showstatus_api_base,id,".xml");
-    char *result = oauth_get(api_base,params,1);
+    char *result = oauth_get(api_base,params,1,GET);
     pthread_cond_signal(&get_timeline_condition);
     return result;
 }

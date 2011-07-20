@@ -28,10 +28,13 @@ typedef struct{
     char *value;
 } kvpair;
 
+#define GET 0
+#define POST 1
+
 int oauth_authorize(char **access_token, char **access_token_secret, char **user_id, char **screen_name);
 
 int init_oauth(char *,char *);
 
-char *oauth_get(const char *api_base, kvpair *params, int nr_param);
+char *oauth_get(const char *api_base, kvpair *params, int nr_param, int get_or_post);
 
 #endif

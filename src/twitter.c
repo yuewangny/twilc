@@ -43,24 +43,6 @@
 #define STATUS_MAX_NUM 2000
 
 
-int char2wchar(wchar_t *deststr,char *srcstr){
-    if(!deststr)
-        return -1;
-    mbtowc((wchar_t *)NULL, NULL, 0);
-
-    *deststr = '\0';
-    while(*srcstr != '\0'){
-        int mbclen = mbtowc(deststr, srcstr, MB_LEN_MAX);
-        if(mbclen < 0)
-            return -1;
-        srcstr += mbclen;
-        wprintf(L"==%c==",*deststr);
-        deststr ++;
-    }
-    *deststr = '\0';
-
-    return 0;
-}
 
 status *newgapstatus(){
     status *s = newstatus();

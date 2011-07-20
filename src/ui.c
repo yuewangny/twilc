@@ -18,9 +18,11 @@
  *
  **/
 
+#define _XOPEN_SOURCE
+
 #include <wchar.h>
-#include <ncurses.h>
 #include <curses.h>
+#include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
 #include <libxml/parser.h>
@@ -144,29 +146,6 @@ int destroy_ui(){
         delwin(state_win);
 }
 
-/*
-void filter_display(WINDOW *win, struct status_node *p){
-    int y,x;
-    if(p->filter_count > 0){
-        for(int j = 0; j < p->filter_count; j++){
-            display_filter *fil = p->filter_list[j];
-            if(fil)
-                fil->before_filter(win);
-            getyx(win,y,x);
-            p->x_filter_begin[j] = x;
-            p->y_filter_begin[j] = y;
-            waddstr(win,p->filtered_text[j]);
-            getyx(win,y,x);
-            p->x_filter_end[j] = x;
-            p->y_filter_end[j] = y;
-            if(fil)
-                fil->after_filter(win);
-        }
-    }
-    else
-        waddstr(win,p->text);
-}
-*/
 
 int refresh_status_height(WINDOW *win,struct status_node *start,struct status_node *end){
     struct status_node *p;
@@ -254,3 +233,51 @@ int highlight_status(WINDOW *win, struct status_node *sn){
     return 0;
 }
 
+int input_new_tweet(WINDOW *win, wchar_t *newtext){
+    wclear(win);
+    wrefresh(win);
+    wmove(win,0,0);
+    waddwstr(win);
+
+    int count = wcslen(newtext);
+    int y,x;
+    char count_state[8] = "";
+
+    keypad(win,TRUE);
+    echo();
+    curs_set(1);
+    wchar_t wch = 0;
+    while(wget_wch(win, &wch) != ERR && wch != '\n'){
+        if(wch == KEY_BACKSPACE){
+            if(count == 0)
+                continue;
+            count --;
+            if(count < 140){ 
+                getyx(win,y,x);
+                if(x == 0){
+                    int cols,lines;
+                    getmaxyx(win,lines,cols);
+                    wmove(win,y-1,cols-2);
+                }
+                int width = wcwidth(*(newtext-1));
+                if(width > 1)
+                    for(int i = 0;i<width-1;i++)
+                        waddch(win,'\b');
+                wclrtoeol(win);
+                *(--newtext) = '\0';
+            }
+        }
+        else{
+            count ++;
+            if(count <= 140)
+                *newtext ++ = wch;
+        }
+        wrefresh(win);
+        sprintf(count_state,"%3d/%d",count,TWEET_MAX_LEN);
+
+        notify_state_change(count_state);
+    }
+
+    curs_set(0);
+    return count;
+}

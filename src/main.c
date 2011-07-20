@@ -34,6 +34,16 @@
 #include "ui.h"
 #include "twierror.h"
 
+int return_to_current_timeline(WINDOW *win){
+    int y,x;
+    getmaxyx(win,y,x);
+
+    show_timeline(win,timelines[current_tl_index]->current_top,y,x);
+    highlight_status(win,timelines[current_tl_index]->current);
+
+    return 0;
+}
+
 int move_next_page(WINDOW *win, struct status_node *page_start, int direction){
     if(!page_start){
         SET_ERROR_NUMBER(ERROR_PAGE_START);
@@ -118,6 +128,49 @@ void move_top(WINDOW *win){
     highlight_status(win,top);
 }
 
+int compose_new_tweet(WINDOW *win,status *in_reply_to, int if_reply_to_all){
+    wchar_t *newtext = malloc((1+TWEET_MAX_LEN)*sizeof(wchar_t));
+    memset(newtext,'\0',(1+TWEET_MAX_LEN)*sizeof(wchar_t));
+    if(in_reply_to){
+        if(in_reply_to->retweeted_status)
+            in_reply_to = in_reply_to->retweeted_status;
+        wchar_t *ptr = newtext;
+        mbstowcs(ptr,me->screen_name,strlen(me->screen_name));
+        ptr += wcslen(ptr);
+        *ptr = ' ';
+        ++ ptr;
+        if(if_reply_to_all)
+            for(entity *et = in_reply_to->entities; et; et = et->next){
+                if(et->type == ENTITY_TYPE_MENTION){
+                    wcscpy(ptr,et->text);
+                    ptr += wcslen(ptr);
+                    *ptr = ' ';
+                    ++ ptr;
+                }
+            }
+    }
+    int count = input_new_tweet(win,newtext);
+    if(count > 0){
+        /*
+        waddstr(win,"\n");
+        waddwstr(win,newtext);
+        wrefresh(win);
+        */
+
+        char text[140];
+        wcstombs(text,newtext,141);
+        notify_state_change("Sending......");
+        update_status(text,NULL);
+        notify_state_change("Successfully updated.");
+    }
+    else
+        notify_state_change("");
+    free(newtext);
+    return 0;
+}
+
+
+
 /**
  * Commands:
  * a -- 
@@ -159,6 +212,8 @@ void wait_command(WINDOW *win){
             case 'n':
                 // Compose new tweet
                 notify_state_change(states[STATE_NORMAL]);
+                compose_new_tweet(win,NULL,0);
+                return_to_current_timeline(win);
                 break;
             case 'J':
                 // move down one page
@@ -257,7 +312,13 @@ int main(){
         exit(0);
     }
 
+    me = newuser();
+    me->screen_name = config->screen_name;
+    me->id = config->user_id;
+
     init_oauth(config->key,config->secret);
+    free(config);
+
     printf("Loading the timelines....\n");
     if(init_timelines() == -1){
         pthread_mutex_lock(&error_mutex);
