@@ -49,6 +49,9 @@ entity_type *ENTITY_TYPE_MENTION;
 entity_type *ENTITY_TYPE_URL;
 entity_type *ENTITY_TYPE_HASHTAG;
 
+#define ENTITY_TYPE_COUNT 3
+entity_type *entity_types[3];
+
 void init_entity_types();
 int destroy_entity(entity *);
 

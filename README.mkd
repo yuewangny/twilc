@@ -14,6 +14,8 @@ Command
 * K - move up one page
 * . - refresh current timeline and get back to the top
 * v - return to the last viewed tweet if unwillingly brought to the top
+* r - reply
+* R - reply to all
 
 Dependencies
 ------------
@@ -21,4 +23,5 @@ Dependencies
 * libxml2
 * ncursesw
 * libcurl
+* jansson
 

@@ -38,6 +38,7 @@ int init_ui();
 int destroy_ui();
 int notify_error_state();
 int notify_state_change(const char *);
+int notify_timeline_updates(int timeline_index, int updates_count);
 int refresh_status_height(WINDOW *,struct status_node *,struct status_node *);
 int input_new_tweet(WINDOW *,wchar_t*);
 

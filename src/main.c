@@ -20,6 +20,8 @@
 
 #include <ncurses.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <libxml/parser.h>
 #include <locale.h>
@@ -33,6 +35,7 @@
 #include "twiparse.h"
 #include "ui.h"
 #include "twierror.h"
+#include "streaming.h"
 
 int return_to_current_timeline(WINDOW *win){
     int y,x;
@@ -247,6 +250,7 @@ void wait_command(WINDOW *win){
                 break;
             case '.':
                 // refresh the current timeline
+                /*
                 notify_state_change(states[STATE_RETRIEVING_UPDATES]);
                 struct status_node *to_status = timelines[current_tl_index]->head;
                 int res = update_timeline(current_tl_index,NULL,to_status);
@@ -264,9 +268,12 @@ void wait_command(WINDOW *win){
                 }
                 else
                     notify_error_state();
+                */
+                merge_timeline_updates(current_tl_index);
 
                 timelines[current_tl_index]->last_viewed = timelines[current_tl_index]->current;
                 move_top(win);
+                notify_timeline_updates(current_tl_index,0);
                 break;
             case 'v':
                 notify_state_change(states[STATE_NORMAL]);
@@ -296,6 +303,7 @@ void wait_command(WINDOW *win){
 
 int init_mutex(){
     pthread_mutex_init(&error_mutex,NULL);
+    pthread_mutex_init(&event_buffer_mutex,NULL);
     return 0;
 }
 
@@ -327,6 +335,9 @@ int main(){
     init_oauth(config->key,config->secret);
     free(config);
 
+    init_mutex();
+    raw_event_stream  =  new_raw_event_queue();
+
     printf("Loading the timelines....\n");
     if(init_timelines() == -1){
         pthread_mutex_lock(&error_mutex);
@@ -334,7 +345,6 @@ int main(){
         pthread_mutex_unlock(&error_mutex);
         goto exit_twilc;
     }
-    init_mutex();
 
     initscr();
     curs_set(0);
@@ -353,16 +363,24 @@ int main(){
     if(init_ui() == -1)
         goto exit_twilc;
 
+    start_userstream();
     wait_command(tl_win);
 
 
 exit_twilc:
+
     destroy_ui();
     curs_set(1);
     endwin(); 
+
     destroy_mutex();
     for(int i = 0; i < TIMELINE_COUNT; ++i)
         destroy_timeline(timelines[i]);
 
+    stop_userstream();
+    pthread_mutex_lock(&event_buffer_mutex);
+    destroy_raw_event_queue(raw_event_stream);
+    raw_event_stream = NULL;
+    pthread_mutex_unlock(&event_buffer_mutex);
     return 0;
 }

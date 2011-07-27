@@ -31,6 +31,9 @@ typedef struct{
 #define GET 0
 #define POST 1
 
+const char *ACCESS_TOKEN;
+const char *ACCESS_TOKEN_SECRET;
+
 int oauth_authorize(char **access_token, char **access_token_secret, char **user_id, char **screen_name);
 
 int init_oauth(char *,char *);

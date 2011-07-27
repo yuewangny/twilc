@@ -138,7 +138,6 @@ void split_status_entities(status *st){
         }
     }
     et->next = NULL;
-
 }
 
 statuses *newtimeline(){
@@ -150,7 +149,34 @@ statuses *newtimeline(){
     tl->current_bottom = 0;
     tl->separate = 0;
     tl->last_viewed = 0;
+    tl->updates = malloc(sizeof(statuses_updates));
+    tl->updates->head = NULL;
+    tl->updates->tail = NULL;
+    tl->updates->count = 0;
+
+    pthread_mutex_init(&(tl->timeline_mutex),NULL);
+    pthread_mutex_init(&(tl->updates_mutex),NULL);
     return tl;
+}
+
+int add_status(status *st, statuses *timeline){
+    if(!st)
+        return -1;
+
+    int updates_count = 0;
+    pthread_mutex_lock(&(timeline->updates_mutex));
+    struct status_node *sn = newstatusnode(st);
+    sn->next = timeline->updates->head;
+    if(timeline->updates->count == 0)
+        timeline->updates->tail = sn;
+    else
+        timeline->updates->head->prev = sn;
+    timeline->updates->head = sn;
+    timeline->updates->count ++;
+    updates_count = timeline->updates->count;
+    pthread_mutex_unlock(&(timeline->updates_mutex));
+
+    return updates_count;
 }
 
 /*
@@ -175,6 +201,29 @@ int load_conversation(struct status_node *sn){
     return 0;
 }
 */
+
+int merge_timeline_updates(int tl_index){
+    statuses *tl = timelines[tl_index];
+    int updates_count;
+
+    pthread_mutex_lock(&(tl->updates_mutex));
+    pthread_mutex_lock(&(tl->timeline_mutex));
+    updates_count = tl->updates->count;
+    if(updates_count != 0){
+        tl->updates->tail->next = tl->head;
+        tl->head->prev = tl->updates->tail;
+        tl->head = tl->updates->head;
+        tl->count += tl->updates->count;
+        tl->separate = tl->updates->tail;
+
+        tl->updates->head = tl->updates->tail = NULL;
+        tl->updates->count = 0;
+    }
+    pthread_mutex_unlock(&(tl->updates_mutex));
+    pthread_mutex_unlock(&(tl->timeline_mutex));
+
+    return updates_count;
+}
 
 int update_timeline(int tl_index, struct status_node *from_status, struct status_node *to_status){
     char *since_id = 0;
@@ -232,6 +281,15 @@ int destroy_timeline(statuses *tl){
         p = p->next;
         free(tmp);
     }
+    if(tl->updates){
+        p = tl->updates->head;
+        while(p){
+            struct status_node *tmp = p;
+            p = p->next;
+            free(tmp);
+        }
+        free(tl->updates);
+    }
     free(tl);
     return 0;
 }
@@ -263,6 +321,7 @@ int destroy_conversation(struct status_node* conv){
 int destroy_status(status *s){
     if(!s)
         return 0;
+    printf("Destroying status.......");
     if(s->id){
         free(s->id);
         free(s->wtext);
@@ -272,8 +331,12 @@ int destroy_status(status *s){
         if(s->conversation)
             destroy_conversation((struct status_node*)conversation);
         */
-        for(entity *et=s->entities;et;et=et->next)
-            destroy_entity(et);
+        entity *et=s->entities;
+        while(et){
+            entity *prev = et;
+            et = et->next;
+            destroy_entity(prev);
+        }
     }
     free(s);
     return 0;

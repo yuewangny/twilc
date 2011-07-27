@@ -37,8 +37,6 @@ const char *AUTHORIZE_URL = "https://api.twitter.com/oauth/authorize";
 const char *CONSUMER_KEY = "bRHhkPtSm0LINx323EiWCA";
 const char *CONSUMER_SECRET = "OH2xUyk8CH1xdI1ec6fkxDT5oImfDZKvlnqZIogaOM";
 
-const char *ACCESS_TOKEN;
-const char *ACCESS_TOKEN_SECRET;
 
 int oauth_authorize(char **access_token, char **access_token_secret, char **user_id, char **screen_name){
     char *req_url = NULL;

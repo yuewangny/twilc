@@ -85,4 +85,9 @@ void init_entity_types(){
     ENTITY_TYPE_HASHTAG = malloc(sizeof(entity_type));
     ENTITY_TYPE_HASHTAG->before_entity = before_tag;
     ENTITY_TYPE_HASHTAG->after_entity = after_tag;
+
+    entity_types[0] = ENTITY_TYPE_MENTION;
+    entity_types[1] = ENTITY_TYPE_HASHTAG;
+    entity_types[2] = ENTITY_TYPE_URL;
+
 }

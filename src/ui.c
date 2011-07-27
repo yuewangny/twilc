@@ -119,6 +119,28 @@ int notify_state_change(const char *state_str){
     return 0;
 }
 
+int notify_timeline_updates(int tl_index, int updates_count){
+    wmove(title_win,0,0);
+    char *title = titles[current_tl_index];
+
+    int height,width;
+    getmaxyx(title_win,height,width);
+
+    init_pair(6, COLOR_BLACK, COLOR_YELLOW);
+    wattron(title_win,COLOR_PAIR(6));
+    //    wmove(title_win,0,(width-strlen(title))/2-1);
+    waddstr(title_win, titles[current_tl_index]);
+    if(updates_count > 0){
+        char countstr[10];
+        sprintf(countstr,"(%d)",updates_count);
+        waddstr(title_win, countstr);
+    }
+    wattroff(title_win,COLOR_PAIR(6));
+    wclrtoeol(title_win);
+    wrefresh(title_win);
+    return 0;
+}
+
 int init_ui(){
     int height,width,column_width;
     getmaxyx(stdscr,height,width);
@@ -207,7 +229,7 @@ struct status_node *show_timeline(WINDOW *win, struct status_node *sn,int height
 
         if(sn->y_max >= height-3)
             break;
-        if(IS_SEPARATED(sn->st->extra_info))
+        if(sn == timelines[current_tl_index]->separate)
             draw_border(win,'~');
         else
             draw_border(win,'-');

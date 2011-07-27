@@ -43,11 +43,6 @@ typedef struct {
     uint8_t extra_info; //protected,following,followed
 } user;
 
-// entity types
-#define ENTITY_MENTION_TYPE 0 
-#define ENTITY_URL_TYPE 1
-#define ENTITY_HASHTAG_TYPE 2
-
 
 #define TWEET_MAX_LEN 140
 #define ID_MAX_LEN 15
@@ -84,8 +79,12 @@ struct status_node{
     int y_max;
 };
 
-// timeline
-// 28 bytes
+typedef struct{
+    struct status_node *head;
+    struct status_node *tail;
+    int count;
+} statuses_updates;
+
 typedef struct{
     struct status_node *head;
     int count;
@@ -94,7 +93,13 @@ typedef struct{
     struct status_node *current_bottom;
     struct status_node *last_viewed;
     struct status_node *separate;
+    
+    statuses_updates *updates;
+
+    pthread_mutex_t timeline_mutex;
+    pthread_mutex_t updates_mutex;
 } statuses;
+
 
 #define IS_SEPARATED(a)  a & 0x80
 #define SET_SEPARATED(a) a |= 0x80
@@ -118,6 +123,8 @@ typedef struct{
 #define UNSET_RETWEETEDBYSELF a &= 0xFB
 
 #define TIMELINE_COUNT 1 //0 for home, 1 for mention
+#define HOME_TIMELINE 0
+#define MENTION_TIMELINE 1
 
 statuses *timelines[TIMELINE_COUNT];
 
@@ -134,6 +141,8 @@ user *me;
 int current_tl_index;
 
 int authorize(clit_config *config);
+int add_status(status *st, statuses *timeline);
+int merge_timeline_updates(int tl_index);
 int update_timeline(int tl_index, struct status_node *from_status, struct status_node *to_status);
 int load_timeline(char *tmpfile, statuses *tl,struct status_node *from,struct status_node *to);
 void build_status_entities(status *s);
