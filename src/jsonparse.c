@@ -51,8 +51,10 @@ int parse_user_json(json_t *user_root, user **user_ptr){
 
     user *usr = newuser();
     usr->screen_name = strdup(json_string_value(screen_name));
-    //json_decref(screen_name);
 
+    json_t *protected = json_object_get(user_root, "protected");
+    if(json_is_true(protected))
+        SET_PROTECTED(usr->extra_info);
     *user_ptr = usr;
     return 0;
 }

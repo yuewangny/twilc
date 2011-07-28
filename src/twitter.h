@@ -43,6 +43,9 @@ typedef struct {
     uint8_t extra_info; //protected,following,followed
 } user;
 
+#define IS_PROTECTED(a)  (a) & 0x80
+#define SET_PROTECTED(a) (a) |= 0x80
+#define UNSET_PROTECTED(a) (a) &= 0x7F
 
 #define TWEET_MAX_LEN 140
 #define ID_MAX_LEN 15

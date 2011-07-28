@@ -59,6 +59,7 @@ user *newuser(){
     usr->location = 0;
     usr->url = 0;
     usr->bio = 0;
+    usr->extra_info = 0;
     return usr;
 }
 

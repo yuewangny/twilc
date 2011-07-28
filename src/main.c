@@ -302,7 +302,10 @@ void wait_command(WINDOW *win){
                     status *st = timelines[current_tl_index]->current->st;
                     if(st->retweeted_status)
                         st = st->retweeted_status;
-                    retweet_status(st->id);
+                    if(IS_PROTECTED(st->composer->extra_info))
+                        notify_state_change("This user is protected. Cannot retweet.");
+                    else
+                        retweet_status(st->id);
                 }
                 break;
         }
