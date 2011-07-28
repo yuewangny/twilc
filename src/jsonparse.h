@@ -18,20 +18,17 @@
  *
  **/
 
-#ifndef EVENT_H 
-#define EVENT_H
+#ifndef JSONPARSE_H
+#define JSONPARSE_H
 
 #include "twitter.h"
+#include "streaming.h"
+#include <jansson.h>
 
-typedef struct {
-   int type; 
-   user *target;
-   user *source;
-   void *target_object;
-   char *created_at;
-}event;
-
-int consume_stream(char *data);
+int parse_friends_json(json_t *friends_root, void *data_ptr);
+int parse_user_json(json_t *user_root, user **user_ptr);
+int parse_status_json(json_t *status_root, status **status_ptr);
+int parse_event_json(json_t *event_root, event **event_ptr);
 
 #endif
 

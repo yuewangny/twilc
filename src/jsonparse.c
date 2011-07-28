@@ -157,31 +157,3 @@ int parse_status_json(json_t *status_root, status **status_ptr){
 int parse_event_json(json_t *event_root, event **event_ptr){
 }
 
-int consume_stream(char *data){
-    if(data == NULL)
-        return -1;
-
-    json_t *root;
-    json_error_t error;
-
-    root = json_loads(data, 0, &error);
-
-    if(!root)
-        return -1;
-
-    void *parse_result = NULL;
-    if(parse_friends_json(root, &parse_result) != -1){
-    }
-    else if(parse_status_json(root, (status **)&parse_result)!= -1){
-        status *st = (status *)parse_result;
-        int updates_count = add_status(st,timelines[HOME_TIMELINE]);
-        notify_timeline_updates(HOME_TIMELINE,updates_count);
-    }
-    else if(parse_event_json(root, (event **)&parse_result) != -1){
-    }
-
-    json_decref(root);
-    return 0;
-}
-
-

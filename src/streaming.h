@@ -24,6 +24,7 @@
 #define USER_STREAM_API_BASE "https://userstream.twitter.com/2/user.json"
 
 #include <pthread.h>
+#include "twitter.h"
 
 int open_userstream_conn();
 int close_userstream_conn();
@@ -37,6 +38,14 @@ typedef struct {
     struct raw_event *head;
     struct raw_event *tail;
 } raw_event_queue;
+
+typedef struct {
+   int type; 
+   user *target;
+   user *source;
+   void *target_object;
+   char *created_at;
+}event;
 
 pthread_mutex_t event_buffer_mutex;
 raw_event_queue *raw_event_stream;

@@ -30,6 +30,9 @@
 #include "twiauth.h"
 #include "twierror.h"
 #include "twiaction.h"
+#include "jsonparse.h"
+#include "ui.h"
+#include <jansson.h>
 
 #define WAIT_SECONDS 20
 
@@ -37,6 +40,7 @@ char home_api_base[] = "https://api.twitter.com/1/statuses/home_timeline.xml";
 char mention_api_base[] = "https://api.twitter.com/1/statuses/mentions.xml";
 char user_api_base[] = "https://api.twitter.com/1/statuses/user_timeline.xml";
 char showstatus_api_base[] = "https://api.twitter.com/1/statuses/show/";
+char retweetstatus_api_base[] = "https://api.twitter.com/1/statuses/retweet/";
 
 char update_api_base[] = "https://api.twitter.com/1/statuses/update.xml";
 
@@ -48,6 +52,50 @@ pthread_mutex_t get_status_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Timeline types : 0 for home, 1 for mentions, 2 for user
 char *timeline_api_base[3] = {home_api_base, mention_api_base, user_api_base};
+
+void *retweet_thread_func(void *arg){
+    char *request_url = (char *)arg;
+    notify_state_change("Retweeting...");
+    char *response = oauth_get(request_url,NULL,0,POST);
+    int result = 0;
+    if(response){
+        json_t *status_root;
+        json_error_t error;
+        status_root = json_loads(response,0,&error);
+
+        json_t *rt_root = json_object_get(status_root, "retweeted_status");
+        if(rt_root){
+            json_t *id = json_object_get(rt_root,"id_str");
+            if(json_is_string(id)){
+                const char *idstr = json_string_value(id);
+                if(strstr(request_url, idstr))
+                    result = 1;
+            }
+        }
+        json_decref(status_root);
+    }
+    if(result)
+        notify_state_change("Retweeted successfully.");
+    else
+        notify_state_change("Retweet failed.");
+    free(response);
+    free(request_url);
+
+    return NULL;
+}
+
+int retweet_status(char *status_id){
+    if(!status_id)
+        return -1;
+
+    char *request_url = malloc(strlen(retweetstatus_api_base)+strlen(status_id)+6);
+    sprintf(request_url, "%s%s.json",retweetstatus_api_base,status_id);
+
+    pthread_t retweet_thread;
+    pthread_create(&retweet_thread,NULL,retweet_thread_func,request_url);
+
+    return 0;
+}
 
 char *update_status(char *text, char *in_reply_to_id){
     if(!text)

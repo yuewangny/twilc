@@ -297,6 +297,14 @@ void wait_command(WINDOW *win){
                 compose_new_tweet(win,timelines[current_tl_index]->current->st,1);
                 return_to_current_timeline(win);
                 break;
+            case 't':
+                if(timelines[current_tl_index]->current->st){
+                    status *st = timelines[current_tl_index]->current->st;
+                    if(st->retweeted_status)
+                        st = st->retweeted_status;
+                    retweet_status(st->id);
+                }
+                break;
         }
     }
 }

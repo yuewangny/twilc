@@ -26,11 +26,14 @@
 #include <oauth.h>
 #include <curl/curl.h>
 #include <pthread.h>
+#include <jansson.h>
 
 #include "twiauth.h"
 #include "streaming.h"
 #include "twierror.h"
-#include "event.h"
+#include "jsonparse.h"
+#include "ui.h"
+#include "twitter.h"
 
 extern const char *CONSUMER_KEY;
 extern const char *CONSUMER_SECRET;
@@ -140,6 +143,33 @@ int open_userstream_conn(){
 
 int close_userstream_conn(){
     curl_easy_cleanup(connection);
+}
+
+int consume_stream(char *data){
+    if(data == NULL)
+        return -1;
+
+    json_t *root;
+    json_error_t error;
+
+    root = json_loads(data, 0, &error);
+
+    if(!root)
+        return -1;
+
+    void *parse_result = NULL;
+    if(parse_friends_json(root, &parse_result) != -1){
+    }
+    else if(parse_status_json(root, (status **)&parse_result)!= -1){
+        status *st = (status *)parse_result;
+        int updates_count = add_status(st,timelines[HOME_TIMELINE]);
+        notify_timeline_updates(HOME_TIMELINE,updates_count);
+    }
+    else if(parse_event_json(root, (event **)&parse_result) != -1){
+    }
+
+    json_decref(root);
+    return 0;
 }
 
 void *collecting_thread_func(void *arg){

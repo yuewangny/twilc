@@ -192,7 +192,7 @@ char *oauth_get(const char *api_base, kvpair *params, int nr_param, int get_or_p
     else{
         char *postarg;
         req_url = oauth_sign_url2(call_url ,&postarg,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
-        oauth_http_post(req_url,postarg);
+        fn = oauth_http_post(req_url,postarg);
     }
 
     free(call_url);
