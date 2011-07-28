@@ -255,14 +255,16 @@ int highlight_status(WINDOW *win, struct status_node *sn){
     return 0;
 }
 
-int input_new_tweet(WINDOW *win, wchar_t *newtext){
+int input_new_tweet(WINDOW *win){
+    wchar_t *text = newtext;
+
     wclear(win);
     wrefresh(win);
     wmove(win,0,0);
-    waddwstr(win,newtext);
+    waddwstr(win,text);
 
-    int count = wcslen(newtext);
-    newtext += count;
+    int count = wcslen(text);
+    text += count;
     int y,x;
     char count_state[8] = "";
     sprintf(count_state,"%3d/%d",count,TWEET_MAX_LEN);
@@ -284,18 +286,20 @@ int input_new_tweet(WINDOW *win, wchar_t *newtext){
                     getmaxyx(win,lines,cols);
                     wmove(win,y-1,cols-2);
                 }
-                int width = wcwidth(*(newtext-1));
+                int width = wcwidth(*(text-1));
                 if(width > 1)
                     for(int i = 0;i<width-1;i++)
                         waddch(win,'\b');
                 wclrtoeol(win);
-                *(--newtext) = '\0';
+                *(--text) = '\0';
             }
         }
         else{
             count ++;
             if(count <= 140)
-                *newtext ++ = wch;
+                *text ++ = wch;
+            else
+                beep();
         }
         wrefresh(win);
         sprintf(count_state,"%3d/%d",count,TWEET_MAX_LEN);

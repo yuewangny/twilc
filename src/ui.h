@@ -40,7 +40,7 @@ int notify_error_state();
 int notify_state_change(const char *);
 int notify_timeline_updates(int timeline_index, int updates_count);
 int refresh_status_height(WINDOW *,struct status_node *,struct status_node *);
-int input_new_tweet(WINDOW *,wchar_t*);
+int input_new_tweet(WINDOW *);
 
 WINDOW *title_win;
 WINDOW *tl_win;
@@ -58,5 +58,6 @@ WINDOW *state_win;
 #define NR_STATES 8 
 
 const char *states[NR_STATES];
+wchar_t newtext[TWEET_MAX_LEN+1];
 
 #endif

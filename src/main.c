@@ -132,7 +132,6 @@ void move_top(WINDOW *win){
 }
 
 int compose_new_tweet(WINDOW *win,status *in_reply_to, int if_reply_to_all){
-    wchar_t *newtext = malloc((1+TWEET_MAX_LEN)*sizeof(wchar_t));
     memset(newtext,'\0',(1+TWEET_MAX_LEN)*sizeof(wchar_t));
     if(in_reply_to){
         if(in_reply_to->retweeted_status)
@@ -155,20 +154,22 @@ int compose_new_tweet(WINDOW *win,status *in_reply_to, int if_reply_to_all){
             }
         }
     }
-    int count = input_new_tweet(win,newtext);
+    int count = input_new_tweet(win);
     if(count > 0){
         char text[TWEET_MAX_LEN * 4];
         char *in_reply_to_status_id = NULL;
         if(in_reply_to)
             in_reply_to_status_id = in_reply_to->id;
         wcstombs(text,newtext,TWEET_MAX_LEN * 4);
-        notify_state_change("Sending......");
+        if(count <=140)
+            notify_state_change("Sending......");
+        else
+            notify_state_change("Longer than 140. Will be truncated.");
         update_status(text,in_reply_to_status_id);
         notify_state_change("Successfully updated.");
     }
     else
         notify_state_change("");
-    free(newtext);
     return 0;
 }
 
