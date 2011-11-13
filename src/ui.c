@@ -25,7 +25,6 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libxml/parser.h>
 #include <locale.h>
 #include <pthread.h>
 

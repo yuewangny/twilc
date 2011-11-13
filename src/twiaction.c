@@ -30,19 +30,19 @@
 #include "twiauth.h"
 #include "twierror.h"
 #include "twiaction.h"
-#include "jsonparse.h"
+#include "twiparse.h"
 #include "ui.h"
 #include <jansson.h>
 
 #define WAIT_SECONDS 20
 
-char home_api_base[] = "https://api.twitter.com/1/statuses/home_timeline.xml";
-char mention_api_base[] = "https://api.twitter.com/1/statuses/mentions.xml";
-char user_api_base[] = "https://api.twitter.com/1/statuses/user_timeline.xml";
+char home_api_base[] = "https://api.twitter.com/1/statuses/home_timeline.json";
+char mention_api_base[] = "https://api.twitter.com/1/statuses/mentions.json";
+char user_api_base[] = "https://api.twitter.com/1/statuses/user_timeline.json";
 char showstatus_api_base[] = "https://api.twitter.com/1/statuses/show/";
 char retweetstatus_api_base[] = "https://api.twitter.com/1/statuses/retweet/";
 
-char update_api_base[] = "https://api.twitter.com/1/statuses/update.xml";
+char update_api_base[] = "https://api.twitter.com/1/statuses/update.json";
 
 pthread_cond_t get_timeline_condition = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t get_timeline_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -198,8 +198,8 @@ void *get_status_thread_func(void *arg){
     params[0].key = "include_entities";
     params[0].value = "true";
 
-    char api_base[strlen(showstatus_api_base)+strlen(id)+5];
-    sprintf(api_base,"%s%s%s",showstatus_api_base,id,".xml");
+    char api_base[strlen(showstatus_api_base)+strlen(id)+6];
+    sprintf(api_base,"%s%s%s",showstatus_api_base,id,".json");
     char *result = oauth_get(api_base,params,1,GET);
     pthread_cond_signal(&get_timeline_condition);
     return result;

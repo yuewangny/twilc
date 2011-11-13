@@ -20,5 +20,15 @@
 
 
 #include "twitter.h"
+#include "streaming.h"
+#include <jansson.h>
 
-int parse_timeline(char *filename, statuses *tl); 
+int parse_friends_json(json_t *friends_root, void *data_ptr);
+int parse_user_json(json_t *user_root, user **user_ptr);
+int parse_status_json(json_t *status_root, status **status_ptr);
+int parse_statuses_json(json_t *status_root, status **status_ptr);
+int parse_event_json(json_t *event_root, event **event_ptr);
+
+
+int parse_timeline(char *data, statuses *tl); 
+
