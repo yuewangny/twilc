@@ -22,7 +22,6 @@ Command
 Dependencies
 ------------
 * liboauth
-* libxml2
 * ncursesw
 * libcurl
 * jansson

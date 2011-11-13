@@ -158,7 +158,18 @@ char *http_get(char *url){
         return NULL;
     }
 
-    return TEMP_FILE;
+    size_t size;
+    fp = fopen(TEMP_FILE,"r");
+    fseek (fp, 0 , SEEK_END);
+    size = ftell (fp);
+    rewind (fp);
+
+    char *data = malloc(sizeof(char)*size);
+    fread(data,1,size,fp);
+    fclose(fp);
+    remove(TEMP_FILE);
+
+    return data;
 }
 
 char *oauth_get(const char *api_base, kvpair *params, int nr_param, int get_or_post){
@@ -183,22 +194,22 @@ char *oauth_get(const char *api_base, kvpair *params, int nr_param, int get_or_p
         strcat(call_url,params[i].value);
     }
 
-    char *fn = NULL;
+    char *data = NULL;
     if(get_or_post == GET){
         req_url = oauth_sign_url2(call_url ,NULL,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
         //char *fn = oauth_http_get(req_url, arg);
-        fn = http_get(req_url);
+        data = http_get(req_url);
     }
     else{
         char *postarg;
         req_url = oauth_sign_url2(call_url ,&postarg,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
-        fn = oauth_http_post(req_url,postarg);
+        data = oauth_http_post(req_url,postarg);
     }
 
     free(call_url);
     free(req_url);
 
-    return fn;
+    return data;
 }
 
 void test_authorize(){

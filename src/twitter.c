@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libxml/parser.h>
 #include <glib.h>
 #include <wchar.h>
 
@@ -251,22 +250,20 @@ int update_timeline(int tl_index, struct status_node *from_status, struct status
 
 int init_timelines(){
     init_entity_types();
+
     for(int i = 0; i < TIMELINE_COUNT; ++i){
         timelines[i] = newtimeline();
     }
     statuses *home = timelines[0];
-    char *tmpfile = get_timeline(TL_TYPE_HOME, NULL,NULL,DEFAULT_LOAD_COUNT);
-    if(!tmpfile)
+
+    char *data = get_timeline(TL_TYPE_HOME, NULL,NULL,DEFAULT_LOAD_COUNT);
+    if(!data)
         return -1;
-    load_timeline(tmpfile,home,NULL,NULL);
-    remove(tmpfile);
+    load_timeline(data,home,NULL,NULL);
+
     home->current = home->head;
     home->current_top = home->head;
     home->last_viewed = NULL;
-
-    /*
-     * status_map = g_hash_table_new(g_str_hash,strcmp);
-     */
 
     current_tl_index = 0;
 
@@ -371,11 +368,10 @@ int change_separate_status(struct status_node *newsep){
 /*
  * Merge new tweets with current timeline.
  */
-int load_timeline(char *tmpfile, statuses *tl, struct status_node *from_status, struct status_node *to_status){
-    LIBXML_TEST_VERSION
+int load_timeline(char *data, statuses *tl, struct status_node *from_status, struct status_node *to_status){
     statuses *toptweets = newtimeline();
 
-    if(parse_timeline(tmpfile,toptweets) < 0)
+    if(parse_timeline(data,toptweets) < 0)
         return -1;
 
     /*

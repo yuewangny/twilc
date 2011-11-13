@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <libxml/parser.h>
 #include <locale.h>
 #include <pthread.h>
 

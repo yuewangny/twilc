@@ -25,7 +25,7 @@
 
 #include "config.h"
 
-#define CONFIG_FILE_NAME ".clitcfg"
+#define CONFIG_FILE_NAME ".twilc"
 
 int init_config(char key[],char secret[], char user_id[], char screen_name[],clit_config *config){
     if(!config)

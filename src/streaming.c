@@ -31,15 +31,18 @@
 #include "twiauth.h"
 #include "streaming.h"
 #include "twierror.h"
-#include "jsonparse.h"
+#include "twiparse.h"
 #include "ui.h"
 #include "twitter.h"
 
 extern const char *CONSUMER_KEY;
 extern const char *CONSUMER_SECRET;
 
-CURL *connection; 
+static CURL *connection; 
 
+/**
+ * Create a new queue of raw events.
+ */
 raw_event_queue *new_raw_event_queue(){
     raw_event_queue *raw_event_stream = malloc(sizeof(raw_event_queue));
     raw_event_stream->head = NULL;
@@ -47,6 +50,9 @@ raw_event_queue *new_raw_event_queue(){
     return raw_event_stream;
 }
 
+/**
+ * Destroy a queue of raw events.
+ */
 int destroy_raw_event_queue(raw_event_queue *queue){
     if(!queue)
         return 0;
@@ -56,6 +62,9 @@ int destroy_raw_event_queue(raw_event_queue *queue){
     free(queue);
 }
 
+/**
+ * Create a new raw event.
+ */
 struct raw_event *new_raw_event(char *data){
     struct raw_event *re = malloc(sizeof(struct raw_event));
     re->data = data;
@@ -63,6 +72,9 @@ struct raw_event *new_raw_event(char *data){
     return re;
 }
 
+/**
+ * Destroy a raw event.
+ */
 int destroy_raw_event(struct raw_event *re){
     if(!re)
         return 0;
@@ -72,6 +84,9 @@ int destroy_raw_event(struct raw_event *re){
     return 0;
 }
 
+/**
+ * Add a piece of streaming data to the queue of raw events.
+ */
 int add_raw_event(raw_event_queue *queue, char *data){
     if(data == NULL || strlen(data) == 0)
         return 0;
@@ -90,6 +105,9 @@ int add_raw_event(raw_event_queue *queue, char *data){
     return 0;
 }
 
+/**
+ * Extract a piece of streaming data from the queue of raw events.
+ */
 char *extract_raw_event(raw_event_queue *queue){
     if(!queue)
         return NULL;
@@ -111,7 +129,7 @@ char *extract_raw_event(raw_event_queue *queue){
     return data;
 }
 
-size_t callback_func(void *ptr, size_t size, size_t count, void *stream){
+static size_t callback_func(void *ptr, size_t size, size_t count, void *stream){
     char *data = malloc(strlen((char *)ptr)+1);
     strcpy(data,(char *)ptr);
 
@@ -120,6 +138,9 @@ size_t callback_func(void *ptr, size_t size, size_t count, void *stream){
     return count;
 }
 
+/**
+ * Open and initialize the user stream connection.
+ */
 int open_userstream_conn(){
     char *url = oauth_sign_url2(USER_STREAM_API_BASE,NULL,OA_HMAC,NULL,CONSUMER_KEY, CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
 
@@ -141,10 +162,16 @@ int open_userstream_conn(){
     }
 }
 
+/**
+ * Close the user stream connection.
+ */
 int close_userstream_conn(){
     curl_easy_cleanup(connection);
 }
 
+/**
+ * Take corresponding actions according to the received streaming data.
+ */
 int consume_stream(char *data){
     if(data == NULL)
         return -1;
