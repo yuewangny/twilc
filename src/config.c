@@ -125,14 +125,3 @@ int parse_config(clit_config *config){
     return 0;
 }
 
-int test_save(){
-    clit_config *config = malloc(sizeof(clit_config));
-    init_config("15975251-xuyUN5j1flGOphScil8sJhLD4mr17hgRWQr1HNTSb","eksfLlsNmj9F7SFbsx2qQdCc8ELfkRVtTkyAG0oi7tI","15975251","pipitu",config);
-    save_config(config);
-}
-
-int test_parse(){
-    clit_config *config = malloc(sizeof(clit_config));
-    parse_config(config);
-}
-

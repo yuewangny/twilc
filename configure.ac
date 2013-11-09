@@ -28,7 +28,7 @@ fi
 AC_CHECK_HEADERS([locale.h stdint.h stdlib.h string.h])
 
 # We need c99
-CFLAGS="$CFLAGS -std=gnu99 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
+CFLAGS="$CFLAGS -std=gnu99 -I/usr/include/glib-2.0 -I/usr/local/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/local/lib/glib-2.0/include"
 
 # Checks for typedefs, structures, and compiler characteristics.
 
